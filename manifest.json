@@ -1,0 +1,49 @@
+{
+  "name": "ADRA – Sistema de Gestão Financeira",
+  "short_name": "ADRA Finanças",
+  "description": "Sistema unificado de gestão financeira e operacional para ADRA Brasil – Notas Fiscais, Pix, Conciliação e Pendências Internas.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0F2D4E",
+  "theme_color": "#0F2D4E",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "categories": ["business", "finance", "productivity"],
+  "icons": [
+    { "src": "icons/icon-72.png",  "sizes": "72x72",   "type": "image/png" },
+    { "src": "icons/icon-96.png",  "sizes": "96x96",   "type": "image/png" },
+    { "src": "icons/icon-128.png", "sizes": "128x128", "type": "image/png" },
+    { "src": "icons/icon-144.png", "sizes": "144x144", "type": "image/png" },
+    { "src": "icons/icon-152.png", "sizes": "152x152", "type": "image/png" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-384.png", "sizes": "384x384", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nova Nota Fiscal",
+      "short_name": "Nova NF",
+      "description": "Lançar uma nova nota fiscal",
+      "url": "./?m=notas-fiscais&action=new",
+      "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Pendências do Mês",
+      "short_name": "Pendências",
+      "description": "Visualizar pendências do período atual",
+      "url": "./?m=pendencias",
+      "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Pix & Pagamentos",
+      "short_name": "Pix",
+      "description": "Gerar e conciliar pagamentos Pix",
+      "url": "./?m=pix",
+      "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }]
+    }
+  ],
+  "screenshots": [],
+  "prefer_related_applications": false
+}

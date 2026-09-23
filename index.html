@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="description" content="ADRA – Sistema de Gestão Financeira e Operacional" />
+  <meta name="theme-color" content="#0F2D4E" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="ADRA Finanças" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <title>ADRA – Gestão Financeira</title>
+
+  <!-- Tailwind CSS (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            adra: {
+              950: '#071525', 900: '#0B2035', 800: '#0F2D4E',
+              700: '#153D6B', 600: '#1A4B7A', 500: '#2060A0',
+              400: '#3B82C4', 200: '#93C5E8', 100: '#DBEEFF', 50: '#F0F7FF',
+            }
+          },
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+        }
+      }
+    }
+  </script>
+
+  <!-- QR Code (Pix) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <!-- Supabase JS v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    /* ── Scrollbars ── */
+    #sidebar-nav::-webkit-scrollbar { width: 3px; }
+    #sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 2px; }
+    #main-content::-webkit-scrollbar { width: 6px; }
+    #main-content::-webkit-scrollbar-track { background: #F1F5F9; }
+    #main-content::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+
+    /* ── Animations ── */
+    .fade-in  { animation: fadeIn .2s ease-out; }
+    .slide-up { animation: slideUp .25s ease-out; }
+    @keyframes fadeIn  { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes slideUp { from { opacity:0; transform:translateY(16px);} to { opacity:1; transform:translateY(0); } }
+
+    /* ── Status pulso ── */
+    .pulse-conciliado { animation: pulseConciliado 2s infinite; }
+    @keyframes pulseConciliado {
+      0%,100% { box-shadow: 0 0 0 0 rgba(16,185,129,.4); }
+      50%      { box-shadow: 0 0 0 6px rgba(16,185,129,0); }
+    }
+
+    /* ── Nav items ── */
+    .nav-item           { border-left: 3px solid transparent; transition: all .15s; }
+    .nav-item.active    { background: rgba(255,255,255,.12); border-left-color: #60A5FA; }
+    .nav-item:hover     { background: rgba(255,255,255,.07); }
+
+    /* ── Sidebar mobile ── */
+    @media (max-width: 768px) {
+      #sidebar           { transform: translateX(-100%); transition: transform .28s ease; position: fixed; z-index:40; height:100%; top:0; left:0; }
+      #sidebar.open      { transform: translateX(0); }
+      #sidebar-overlay   { display:none; }
+      #sidebar-overlay.open { display:block; }
+    }
+
+    /* ── Modal ── */
+    .modal-backdrop { backdrop-filter: blur(3px); }
+
+    /* ── Inputs ── */
+    .adra-input {
+      @apply w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800
+             focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100
+             transition-shadow bg-white;
+    }
+    .adra-label { @apply block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1; }
+    .adra-btn   { @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all; }
+
+    /* ── Badges de status ── */
+    .badge { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold; }
+    .badge-pendente    { @apply bg-amber-100  text-amber-800; }
+    .badge-aprovada    { @apply bg-blue-100   text-blue-800; }
+    .badge-pix_gerado  { @apply bg-indigo-100 text-indigo-800; }
+    .badge-pago_conciliado { @apply bg-emerald-100 text-emerald-800; }
+    .badge-divergencia { @apply bg-red-100    text-red-800; }
+    .badge-cancelada   { @apply bg-slate-100  text-slate-600; }
+    .badge-aberta      { @apply bg-amber-100  text-amber-800; }
+    .badge-em_analise  { @apply bg-blue-100   text-blue-800; }
+    .badge-resolvida   { @apply bg-emerald-100 text-emerald-800; }
+
+    /* ── KPI cards ── */
+    .kpi-card { @apply bg-white rounded-xl p-5 border border-slate-200 relative overflow-hidden; }
+    .kpi-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:4px; }
+    .kpi-blue::before   { background: #3B82F6; }
+    .kpi-green::before  { background: #10B981; }
+    .kpi-amber::before  { background: #F59E0B; }
+    .kpi-red::before    { background: #EF4444; }
+    .kpi-purple::before { background: #8B5CF6; }
+
+    /* ── Tables ── */
+    .adra-table { @apply w-full text-sm; }
+    .adra-table thead th { @apply px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide bg-slate-50 border-b border-slate-200; }
+    .adra-table tbody td { @apply px-4 py-3 text-slate-700 border-b border-slate-100; }
+    .adra-table tbody tr:hover { background: #F8FAFC; }
+    .adra-table tbody tr:last-child td { border-bottom: none; }
+
+    /* ── Pix QR ── */
+    #pix-qr-code canvas, #pix-qr-code img { border-radius: 8px; }
+
+    /* ── Tabs ── */
+    .tab-btn        { @apply px-4 py-2 text-sm font-medium text-slate-500 border-b-2 border-transparent transition-all; }
+    .tab-btn.active { @apply text-blue-600 border-blue-500; }
+
+    /* ── Print ── */
+    @media print {
+      #sidebar, #topbar, #install-banner, #toast-container { display:none !important; }
+      #main-content { padding:0; }
+    }
+  </style>
+</head>
+<body class="h-full bg-slate-100 antialiased overflow-hidden">
+
+<!-- =====================================================
+     BANNER: INSTALAÇÃO PWA (nativo)
+     ===================================================== -->
+<div id="install-banner"
+     class="hidden fixed bottom-0 left-0 right-0 z-[60] bg-adra-800 text-white shadow-2xl"
+     style="padding-bottom: env(safe-area-inset-bottom)">
+  <div class="flex items-center gap-3 px-4 py-3">
+    <div class="w-11 h-11 bg-white/15 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">📊</div>
+    <div class="flex-1 min-w-0">
+      <p class="font-bold text-sm">Instalar ADRA Finanças</p>
+      <p class="text-xs text-blue-200 truncate">Acesso offline · Notificações de pendências</p>
+    </div>
+    <button id="install-btn"
+            class="flex-shrink-0 bg-blue-500 hover:bg-blue-400 active:bg-blue-600
+                   text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors">
+      Instalar
+    </button>
+    <button id="install-dismiss" class="text-blue-300 hover:text-white px-2 py-2 text-lg leading-none">✕</button>
+  </div>
+</div>
+
+<!-- Banner iOS (Add to Home Screen) -->
+<div id="ios-install-banner"
+     class="hidden fixed bottom-0 left-0 right-0 z-[60] bg-adra-800 text-white px-4 pt-4 shadow-2xl"
+     style="padding-bottom: calc(1rem + env(safe-area-inset-bottom))">
+  <button id="ios-banner-close" class="absolute top-3 right-4 text-blue-300 text-lg">✕</button>
+  <div class="flex gap-3 items-start pr-6">
+    <span class="text-2xl">📲</span>
+    <div>
+      <p class="font-bold text-sm mb-1">Instalar no iPhone / iPad</p>
+      <p class="text-xs text-blue-200 leading-relaxed">
+        Toque em <strong class="bg-white/20 px-1 rounded">Compartilhar</strong> e depois
+        em <strong>"Adicionar à Tela de Início"</strong> para instalar o app sem App Store.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- =====================================================
+     MODAL: CONFIGURAÇÃO INICIAL (Supabase)
+     ===================================================== -->
+<div id="setup-modal"
+     class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-adra-950/90 modal-backdrop">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-8 slide-up">
+    <div class="text-center mb-6">
+      <div class="w-14 h-14 bg-adra-800 rounded-xl flex items-center justify-center text-white text-2xl mx-auto mb-4 font-black">A</div>
+      <h2 class="text-xl font-bold text-slate-800">ADRA Finanças</h2>
+      <p class="text-slate-500 text-sm mt-1">Informe as credenciais do seu projeto Supabase<br>ou execute em modo demonstração.</p>
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label class="adra-label">URL do Projeto Supabase</label>
+        <input id="setup-url" type="text" placeholder="https://xxxxxxxxxxx.supabase.co" class="adra-input" />
+      </div>
+      <div>
+        <label class="adra-label">Chave Anon (pública)</label>
+        <input id="setup-key" type="password" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9…" class="adra-input" />
+      </div>
+      <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-700 leading-relaxed">
+        💡 <b>Modo Demo:</b> Todos os dados ficam no navegador (localStorage). Ideal para testes e apresentações — sem dependência de backend.
+      </div>
+    </div>
+    <div class="flex gap-3 mt-6">
+      <button id="setup-demo-btn"
+              class="adra-btn flex-1 border border-slate-300 text-slate-600 hover:bg-slate-50">
+        🧪 Usar Demo
+      </button>
+      <button id="setup-connect-btn"
+              class="adra-btn flex-1 bg-adra-800 text-white hover:bg-adra-700">
+        🔗 Conectar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- =====================================================
+     LAYOUT PRINCIPAL
+     ===================================================== -->
+<div class="flex h-screen" id="app-layout">
+
+  <!-- Overlay mobile -->
+  <div id="sidebar-overlay"
+       class="fixed inset-0 z-30 bg-black/50 hidden"
+       onclick="App.closeSidebar()"></div>
+
+  <!-- =================================================
+       BARRA LATERAL
+       ================================================= -->
+  <aside id="sidebar"
+         class="w-64 bg-adra-800 text-white flex flex-col flex-shrink-0 h-screen overflow-hidden"
+         style="min-width:256px">
+
+    <!-- Logo -->
+    <div class="px-5 py-4 border-b border-white/10 flex items-center gap-3">
+      <div class="w-9 h-9 bg-white/15 rounded-lg flex items-center justify-center font-black text-lg select-none">A</div>
+      <div class="min-w-0">
+        <p class="font-bold text-sm leading-tight">ADRA Brasil</p>
+        <p class="text-xs text-adra-200 truncate">Gestão Financeira</p>
+      </div>
+    </div>
+
+    <!-- Usuário -->
+    <div id="sidebar-user" class="px-5 py-3 border-b border-white/10">
+      <div class="flex items-center gap-3">
+        <div id="user-avatar"
+             class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center
+                    text-xs font-bold flex-shrink-0 select-none">AD</div>
+        <div class="min-w-0">
+          <p id="user-name"  class="text-xs font-semibold leading-tight text-white truncate">Carregando…</p>
+          <p id="user-role"  class="text-xs text-adra-200 truncate">–</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Seletor de período -->
+    <div class="px-5 py-3 border-b border-white/10">
+      <label class="text-[10px] text-adra-200 uppercase tracking-widest font-semibold block mb-1.5">
+        Período de Competência
+      </label>
+      <input type="month" id="period-selector"
+             class="w-full bg-white/10 text-white text-xs rounded-lg px-2 py-1.5
+                    border border-white/20 focus:border-adra-400 focus:outline-none cursor-pointer" />
+    </div>
+
+    <!-- Navegação -->
+    <nav id="sidebar-nav" class="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
+
+      <!-- ⭐ Favoritos -->
+      <div>
+        <button class="w-full flex items-center justify-between px-3 py-1.5
+                       text-[10px] text-adra-200 uppercase tracking-widest font-semibold rounded
+                       hover:bg-white/5 transition-colors"
+                onclick="App.toggleNavSection('favorites')">
+          <span>⭐ Favoritos</span>
+          <span id="chv-favorites" class="text-sm transition-transform duration-200">▾</span>
+        </button>
+        <div id="sec-favorites" class="ml-2 space-y-0.5">
+          <div id="favorites-list">
+            <p class="text-xs text-adra-200/50 px-3 py-1.5 italic">Nenhum favorito</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 📅 Rotina Mensal -->
+      <div>
+        <button class="w-full flex items-center justify-between px-3 py-1.5
+                       text-[10px] text-adra-200 uppercase tracking-widest font-semibold rounded
+                       hover:bg-white/5 transition-colors"
+                onclick="App.toggleNavSection('routine')">
+          <span>📅 Rotina Mensal</span>
+          <span id="chv-routine" class="text-sm transition-transform duration-200">▾</span>
+        </button>
+        <div id="sec-routine" class="ml-2 space-y-0.5">
+          <a href="#" class="nav-item flex items-center gap-2 px-3 py-2 text-sm text-adra-100 rounded-lg"
+             data-module="notas-fiscais" onclick="App.navigate('notas-fiscais');return false;">
+            <span>🧾</span><span class="flex-1">Notas Fiscais</span>
+            <span id="badge-nf" class="hidden text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-400 text-amber-900">0</span>
+          </a>
+          <a href="#" class="nav-item flex items-center gap-2 px-3 py-2 text-sm text-adra-100 rounded-lg"
+             data-module="pendencias" onclick="App.navigate('pendencias');return false;">
+            <span>💬</span><span class="flex-1">Pendências</span>
+            <span id="badge-pend" class="hidden text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-400 text-white">0</span>
+          </a>
+          <a href="#" class="nav-item flex items-center gap-2 px-3 py-2 text-sm text-adra-100 rounded-lg"
+             data-module="pix" onclick="App.navigate('pix');return false;">
+            <span>🏦</span><span>Pix &amp; Pagamentos</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- 📊 Relatórios -->
+      <div>
+        <button class="w-full flex items-center justify-between px-3 py-1.5
+                       text-[10px] text-adra-200 uppercase tracking-widest font-semibold rounded
+                       hover:bg-white/5 transition-colors"
+                onclick="App.toggleNavSection('reports')">
+          <span>📊 Relatórios</span>
+          <span id="chv-reports" class="text-sm transition-transform duration-200">▾</span>
+        </button>
+        <div id="sec-reports" class="ml-2 space-y-0.5">
+          <a href="#" class="nav-item flex items-center gap-2 px-3 py-2 text-sm text-adra-100 rounded-lg"
+             data-module="relatorio-mensal" onclick="App.navigate('relatorio-mensal');return false;">
+            <span>📋</span><span>Balancete Mensal</span>
+          </a>
+          <a href="#" class="nav-item flex items-center gap-2 px-3 py-2 text-sm text-adra-100 rounded-lg"
+             data-module="relatorio-projetos" onclick="App.navigate('relatorio-projetos');return false;">
+            <span>📈</span><span>Relatório de Projetos</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- 🔧 Ferramentas -->
+      <div>
+        <button class="w-full flex items-center justify-between px-3 py-1.5
+                       text-[10px] text-adra-200 uppercase tracking-widest font-semibold rounded
+                       hover:bg-white/5 transition-colors"
+                onclick="App.toggleNavSection('tools')">
+          <span>🔧 Ferramentas</span>
+          <span id="chv-tools" class="text-sm transition-transform duration-200">▾</span>
+        </button>
+        <div id="sec-tools" class="ml-2 space-y-0.5">
+          <a href="#" class="nav-item flex items-center gap-2 px-3 py-2 text-sm text-adra-100 rounded-lg"
+             data-module="dashboard" onclick="App.navigate('dashboard');return false;">
+            <span>🏠</span><span>Dashboard</span>
+          </a>
+          <a href="#" class="nav-item flex items-center gap-2 px-3 py-2 text-sm text-adra-100 rounded-lg"
+             data-module="projetos" onclick="App.navigate('projetos');return false;">
+            <span>📁</span><span>Projetos</span>
+          </a>
+          <a href="#" class="nav-item flex items-center gap-2 px-3 py-2 text-sm text-adra-100 rounded-lg"
+             data-module="contas-bancarias" onclick="App.navigate('contas-bancarias');return false;">
+            <span>🏛️</span><span>Contas Bancárias</span>
+          </a>
+          <a href="#" class="nav-item flex items-center gap-2 px-3 py-2 text-sm text-adra-100 rounded-lg"
+             data-module="usuarios" onclick="App.navigate('usuarios');return false;">
+            <span>👥</span><span>Usuários e Papéis</span>
+          </a>
+        </div>
+      </div>
+
+    </nav>
+
+    <!-- Footer da sidebar -->
+    <div class="px-5 py-3 border-t border-white/10 flex items-center justify-between">
+      <button onclick="App.navigate('configuracoes')"
+              class="flex items-center gap-2 text-xs text-adra-200 hover:text-white transition-colors">
+        <span>⚙️</span><span>Configurações</span>
+      </button>
+      <button onclick="App.showAbout()"
+              class="text-xs text-adra-200 hover:text-white transition-colors" title="Sobre">
+        ℹ️
+      </button>
+    </div>
+  </aside>
+
+  <!-- =================================================
+       ÁREA PRINCIPAL
+       ================================================= -->
+  <div id="main-wrapper" class="flex-1 flex flex-col overflow-hidden">
+
+    <!-- Barra Superior -->
+    <header id="topbar"
+            class="h-14 bg-white border-b border-slate-200 flex items-center gap-3 px-4 flex-shrink-0 z-20">
+
+      <!-- Botão menu mobile -->
+      <button class="md:hidden text-slate-500 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100"
+              onclick="App.openSidebar()">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+
+      <!-- Breadcrumb -->
+      <div class="flex-1 flex items-center gap-2 text-sm min-w-0">
+        <span class="font-bold text-adra-800 hidden sm:block">ADRA</span>
+        <span class="text-slate-400 hidden sm:block">›</span>
+        <span id="breadcrumb-current" class="text-slate-600 font-medium truncate">Dashboard</span>
+      </div>
+
+      <!-- Busca global -->
+      <div class="relative hidden sm:block">
+        <input type="text" id="global-search" placeholder="Buscar…"
+               class="bg-slate-100 border border-transparent rounded-lg pl-3 pr-3 py-1.5
+                      text-sm w-44 focus:w-60 transition-all focus:bg-white focus:border-slate-300
+                      focus:outline-none focus:ring-2 focus:ring-blue-100"
+               oninput="App.handleSearch(this.value)" />
+      </div>
+
+      <!-- Notificações -->
+      <button id="notif-btn"
+              class="relative p-1.5 rounded-lg text-slate-500 hover:text-adra-800
+                     hover:bg-slate-100 transition-colors"
+              onclick="App.showNotifications()">
+        🔔
+        <span id="notif-badge"
+              class="hidden absolute -top-0.5 -right-0.5 bg-red-500 text-white
+                     text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">!</span>
+      </button>
+
+      <!-- Período atual -->
+      <div class="hidden sm:flex items-center gap-1.5 text-xs text-slate-500
+                  bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 cursor-default">
+        <span>📅</span>
+        <span id="topbar-period">–</span>
+      </div>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main id="main-content" class="flex-1 overflow-y-auto">
+      <div class="flex items-center justify-center h-full">
+        <div class="text-center text-slate-400 fade-in">
+          <div class="text-5xl mb-4">⏳</div>
+          <p class="text-sm font-medium">Inicializando o sistema…</p>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- =====================================================
+     MODAL GLOBAL
+     ===================================================== -->
+<div id="modal-overlay"
+     class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 modal-backdrop"
+     onclick="UI.closeModalOnBackdrop(event)">
+  <div id="modal-box"
+       class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4
+              max-h-[92vh] flex flex-col overflow-hidden slide-up"
+       onclick="event.stopPropagation()">
+    <div id="modal-header"
+         class="flex items-center justify-between px-6 py-4 border-b border-slate-200 flex-shrink-0">
+      <h3 id="modal-title" class="font-bold text-slate-800 text-base"></h3>
+      <button onclick="UI.closeModal()"
+              class="text-slate-400 hover:text-slate-700 text-xl w-8 h-8 flex items-center
+                     justify-center rounded-lg hover:bg-slate-100 transition-colors leading-none">✕</button>
+    </div>
+    <div id="modal-body" class="flex-1 overflow-y-auto p-6"></div>
+    <div id="modal-footer"
+         class="flex items-center justify-end gap-3 px-6 py-4
+                border-t border-slate-200 flex-shrink-0 bg-slate-50 rounded-b-2xl">
+    </div>
+  </div>
+</div>
+
+<!-- =====================================================
+     TOASTS
+     ===================================================== -->
+<div id="toast-container"
+     class="fixed bottom-24 right-4 z-[80] flex flex-col gap-2 pointer-events-none"
+     aria-live="polite"></div>
+
+<!-- =====================================================
+     APP.JS
+     ===================================================== -->
+<script src="app.js"></script>
+</body>
+</html>
