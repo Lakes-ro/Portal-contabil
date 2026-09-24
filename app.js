@@ -1,6 +1,172 @@
 'use strict';
-// ADRA – app.js  |  v1.0.0
-// Sistema de Gestão Financeira e Operacional
+// ================================================================
+// ADRA - Sistema de Gestao Financeira e Operacional  |  v1.0.0
+// ================================================================
+
+// ── CONFIGURACAO (preencha uma unica vez) ─────────────────────────
+//   Copie a URL e a Anon Key do seu projeto em supabase.com
+//   Settings -> API -> Project URL / anon key
+// ─────────────────────────────────────────────────────────────────
+const SUPABASE_URL  = 'https://wssgkqonuxgupxuyxtyv.supabase.co';
+const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indzc2drcW9udXhndXB4dXl4dHl2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNjYwMjMsImV4cCI6MjEwNTc0MjAyM30.YmSa6i6c4Rs9-HWaSS2R9vrpn8hKfDc6igE8mbqek-0';
+// ─────────────────────────────────────────────────────────────────
+
+// E-mail do desenvolvedor/administrador master
+const DEV_EMAIL = 'rogeralmeida15000@gmail.com';
+
+// Cliente Supabase
+const _sbReady = SUPABASE_URL.includes('supabase.co')
+  && !SUPABASE_URL.includes('SEU-PROJETO')
+  && SUPABASE_KEY.length > 40;
+
+const sbClient = _sbReady && typeof supabase !== 'undefined'
+  ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+  : null;
+
+// ── AUTH MODULE ───────────────────────────────────────────────────
+const Auth = {
+  // Verifica sessao existente ao carregar
+  async checkSession() {
+    if (!sbClient) return null;
+    const { data } = await sbClient.auth.getSession();
+    return data?.session || null;
+  },
+
+  // Login com email e senha
+  async handleLogin(e) {
+    e.preventDefault();
+    const email    = document.getElementById('login-email')?.value.trim();
+    const password = document.getElementById('login-password')?.value;
+    const errEl    = document.getElementById('login-error');
+    const btn      = document.getElementById('login-btn');
+    const btnText  = document.getElementById('login-btn-text');
+    if (errEl) errEl.style.display = 'none';
+    if (btn)   { btn.disabled = true; btn.style.background = '#94A3B8'; }
+    if (btnText) btnText.textContent = 'Entrando...';
+
+    try {
+      if (!sbClient) throw new Error('Supabase nao configurado. Verifique SUPABASE_URL e SUPABASE_KEY em app.js.');
+      const { data, error } = await sbClient.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      await this._onLoginSuccess(data.user);
+    } catch (err) {
+      const msgs = {
+        'Invalid login credentials': 'E-mail ou senha incorretos.',
+        'Email not confirmed':        'Confirme seu e-mail antes de entrar.',
+        'Too many requests':          'Muitas tentativas. Aguarde alguns minutos.',
+      };
+      const msg = msgs[err.message] || err.message || 'Erro ao entrar. Tente novamente.';
+      if (errEl) { errEl.textContent = msg; errEl.style.display = 'block'; }
+      if (btn)   { btn.disabled = false; btn.style.background = '#0F2D4E'; }
+      if (btnText) btnText.textContent = 'Entrar no Sistema';
+    }
+  },
+
+  async _onLoginSuccess(authUser) {
+    let profile = null;
+    if (authUser && sbClient) {
+      // Busca perfil existente
+      const { data: found } = await sbClient
+        .from('profiles')
+        .select('*')
+        .eq('id', authUser.id)
+        .maybeSingle();
+
+      profile = found;
+
+      // Primeiro acesso: cria perfil automaticamente
+      if (!profile) {
+        const isAdmin = authUser.email === DEV_EMAIL;
+        const displayName = authUser.user_metadata?.full_name
+          || authUser.email.split('@')[0];
+
+        const { data: created, error: createErr } = await sbClient
+          .from('profiles')
+          .insert({
+            id: authUser.id,
+            full_name: displayName,
+            role: isAdmin ? 'admin' : 'caixa',
+            is_active: true,
+          })
+          .select()
+          .single();
+
+        if (createErr) {
+          console.error('[ADRA] Erro ao criar perfil:', createErr);
+        } else {
+          profile = created;
+          UI.toast('Perfil criado! Configure seu nome em Usuarios.', 'info', 5000);
+        }
+      }
+
+      // Garante que o dev email e sempre admin
+      if (authUser.email === DEV_EMAIL && profile && profile.role !== 'admin') {
+        await sbClient.from('profiles').update({ role: 'admin' }).eq('id', authUser.id);
+        profile.role = 'admin';
+      }
+    }
+
+    S.user = {
+      id:        profile?.id        || authUser?.id    || 'demo',
+      full_name: profile?.full_name || authUser?.email || 'Usuario',
+      role:      profile?.role      || 'caixa',
+      email:     authUser?.email    || '',
+    };
+    S.demoMode = false;
+    S.sbClient = sbClient;
+    this._showApp();
+    await App.boot();
+  },
+
+  enterDemoMode() {
+    S.user     = { id: 'demo', full_name: 'Usuario Demo', role: 'admin', email: '' };
+    S.demoMode = true;
+    S.sbClient = null;
+    DB.init();
+    this._showApp();
+    App.boot();
+  },
+
+  _showApp() {
+    document.getElementById('login-page')?.style && (document.getElementById('login-page').style.display = 'none');
+    const app = document.getElementById('app-layout');
+    if (app) app.classList.remove('hidden');
+  },
+
+  async logout() {
+    if (sbClient && !S.demoMode) await sbClient.auth.signOut();
+    S.user = null; S.demoMode = true; S.sbClient = null;
+    document.getElementById('app-layout')?.classList.add('hidden');
+    const lp = document.getElementById('login-page');
+    if (lp) lp.style.display = 'flex';
+    // Reset form
+    const f = document.getElementById('login-form');
+    if (f) f.reset();
+    const errEl = document.getElementById('login-error');
+    if (errEl) errEl.style.display = 'none';
+    const btn = document.getElementById('login-btn');
+    const btnText = document.getElementById('login-btn-text');
+    if (btn)    { btn.disabled = false; btn.style.background = '#0F2D4E'; }
+    if (btnText) btnText.textContent = 'Entrar no Sistema';
+  },
+
+  togglePasswordVisibility() {
+    const inp = document.getElementById('login-password');
+    if (inp) inp.type = inp.type === 'password' ? 'text' : 'password';
+  },
+
+  showForgotPassword() {
+    if (!sbClient) { alert('Configure o Supabase primeiro para usar a recuperacao de senha.'); return; }
+    const email = document.getElementById('login-email')?.value.trim();
+    if (!email) { alert('Digite seu e-mail primeiro no campo acima.'); return; }
+    sbClient.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + window.location.pathname,
+    }).then(({ error }) => {
+      if (error) alert('Erro: ' + error.message);
+      else alert('E-mail de recuperacao enviado para ' + email + '. Verifique sua caixa de entrada.');
+    });
+  },
+};
 
 const ROLE_LABELS={admin:'Administrador',tesoureiro:'Tesoureiro',contador:'Contador',dp:'Depto. Pessoal',caixa:'Caixa',demo:'Modo Demo'};
 const STATUS_LABELS={pendente:'Pendente',aprovada:'Aprovada',pix_gerado:'Pix Gerado',pago_conciliado:'Pago/Conciliado',divergencia:'Divergência',cancelada:'Cancelada',aberta:'Aberta',em_analise:'Em Análise',resolvida:'Resolvida'};
@@ -66,7 +232,12 @@ const DB={
   _data(){try{const r=localStorage.getItem(this.KEY);return r?JSON.parse(r):null;}catch{return null;}},
   _save(d){localStorage.setItem(this.KEY,JSON.stringify(d));},
   init(){let d=this._data();if(!d){d=JSON.parse(JSON.stringify(SEED_DATA));this._save(d);}return d;},
-  async get(t){if(S.demoMode){const d=this._data()||this.init();return{data:d[t]||[],error:null};}return S.sbClient.from(t).select('*');},
+  async get(t){
+    if(S.demoMode){const d=this._data()||this.init();return{data:d[t]||[],error:null};}
+    // Para profiles, inclui email da coluna se existir
+    const q=S.sbClient.from(t).select('*');
+    return q;
+  },
   async getById(t,id){if(S.demoMode){const d=this._data()||this.init();const r=(d[t]||[]).find(x=>x.id===id);return{data:r||null,error:r?null:'Not found'};}return S.sbClient.from(t).select('*').eq('id',id).single();},
   async insert(t,row){if(S.demoMode){const d=this._data()||this.init();const n={...row,id:t.substring(0,2)+'-'+Date.now(),created_at:new Date().toISOString(),updated_at:new Date().toISOString()};if(!d[t])d[t]=[];d[t].unshift(n);this._save(d);return{data:n,error:null};}return S.sbClient.from(t).insert(row).select().single();},
   async update(t,id,fields){if(S.demoMode){const d=this._data()||this.init();const i=(d[t]||[]).findIndex(x=>x.id===id);if(i!==-1){d[t][i]={...d[t][i],...fields,updated_at:new Date().toISOString()};this._save(d);return{data:d[t][i],error:null};}return{data:null,error:'Not found'};}return S.sbClient.from(t).update(fields).eq('id',id).select().single();},
@@ -503,27 +674,150 @@ const ModRelatorio={
 const ModUsuarios={
   async render(){
     const{data:profiles}=await DB.get('profiles');
-    UI.render(`<div class="p-6 fade-in"><div class="flex items-center justify-between mb-5 flex-wrap gap-3"><div><h1 class="text-xl font-bold text-slate-800">Usuários e Papéis</h1><p class="text-sm text-slate-500">${profiles.length} usuário(s)</p></div>${RBAC.can('canManageUsers')?`<button onclick="ModUsuarios.openNew()" class="adra-btn bg-adra-800 text-white hover:bg-adra-700 shadow-sm">+ Novo Usuário</button>`:''}</div>
-    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden mb-5"><table class="adra-table"><thead><tr><th>Usuário</th><th>Papel</th><th>Departamento</th><th>Status</th>${RBAC.can('canManageUsers')?'<th>Ações</th>':''}</tr></thead><tbody>
-    ${profiles.map(u=>`<tr><td><div class="flex items-center gap-3"><div class="w-9 h-9 bg-adra-600 rounded-full flex items-center justify-center text-white text-xs font-bold">${Fmt.initials(u.full_name)}</div><div><p class="font-semibold text-slate-800 text-sm">${u.full_name}</p></div></div></td><td><span class="badge bg-adra-100 text-adra-800">${ROLE_LABELS[u.role]||u.role}</span></td><td class="text-slate-500 text-sm">${u.department||'–'}</td><td>${u.is_active?'<span class="badge bg-emerald-100 text-emerald-700">Ativo</span>':'<span class="badge bg-red-100 text-red-700">Inativo</span>'}</td>${RBAC.can('canManageUsers')?`<td><button onclick="ModUsuarios.editRole('${u.id}')" class="text-xs px-2 py-1 rounded text-slate-600 hover:bg-slate-100">✏️ Papel</button></td>`:''}</tr>`).join('')}</tbody></table></div>
+    const isDev = S.user.email === DEV_EMAIL || S.user.role === 'admin';
+    UI.render(`<div class="p-6 fade-in">
+    <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+      <div><h1 class="text-xl font-bold text-slate-800">Usuários e Papéis</h1><p class="text-sm text-slate-500">${profiles.length} usuário(s) cadastrado(s)</p></div>
+      ${RBAC.can('canManageUsers')?`<button onclick="ModUsuarios.openNew()" class="adra-btn bg-adra-800 text-white hover:bg-adra-700 shadow-sm">+ Criar Usuário</button>`:''}
+    </div>
+    ${!S.demoMode?`<div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-5 text-sm text-blue-800 flex gap-3">
+      <span class="text-lg">ℹ️</span>
+      <div><b>Como funciona:</b> Ao criar um usuário, um e-mail de acesso é enviado. O usuário entra com a senha cadastrada aqui. Para desabilitar confirmação de e-mail, vá em <b>Supabase → Authentication → Email → Confirm email → OFF</b>.</div>
+    </div>`:''}
+    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden mb-5">
+      <div class="overflow-x-auto"><table class="adra-table"><thead><tr>
+        <th>Usuário</th><th>E-mail</th><th>Papel</th><th>Departamento</th><th>Status</th>
+        ${RBAC.can('canManageUsers')?'<th>Ações</th>':''}
+      </tr></thead><tbody>
+      ${profiles.map(u=>`<tr>
+        <td><div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${u.email===DEV_EMAIL?'bg-purple-600':'bg-adra-600'}">${Fmt.initials(u.full_name)}</div>
+          <div><p class="font-semibold text-slate-800 text-sm">${u.full_name}${u.email===DEV_EMAIL?' <span class="text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-semibold ml-1">Dev</span>':''}</p></div>
+        </div></td>
+        <td class="text-slate-500 text-xs font-mono">${u.email||'–'}</td>
+        <td><span class="badge bg-adra-100 text-adra-800">${ROLE_LABELS[u.role]||u.role}</span></td>
+        <td class="text-slate-500 text-sm">${u.department||'–'}</td>
+        <td>${u.is_active?'<span class="badge bg-emerald-100 text-emerald-700">Ativo</span>':'<span class="badge bg-red-100 text-red-700">Inativo</span>'}</td>
+        ${RBAC.can('canManageUsers')?`<td><div class="flex gap-1">
+          <button onclick="ModUsuarios.editRole('${u.id}')" class="text-xs px-2 py-1 rounded text-slate-600 hover:bg-slate-100">✏️</button>
+          ${u.email!==DEV_EMAIL?`<button onclick="ModUsuarios.toggleActive('${u.id}',${!u.is_active})" class="text-xs px-2 py-1 rounded ${u.is_active?'text-red-600 hover:bg-red-50':'text-emerald-600 hover:bg-emerald-50'}">${u.is_active?'🚫':'✅'}</button>`:''}</div></td>`:''}
+      </tr>`).join('')}
+      </tbody></table></div>
+    </div>
     <div class="bg-white rounded-xl border border-slate-200 p-5"><h3 class="font-bold text-slate-700 text-sm mb-4">Matriz de Permissões (RBAC)</h3><div class="overflow-x-auto"><table class="w-full text-xs"><thead><tr><th class="text-left py-2 pr-4 text-slate-500 font-semibold">Permissão</th>${Object.keys(RBAC.rules).map(r=>`<th class="py-2 px-2 text-center text-slate-500 font-semibold">${ROLE_LABELS[r]}</th>`).join('')}</tr></thead><tbody>
     ${[['canCreateNote','Criar Nota Fiscal'],['canApprove','Aprovar / Gerar Pix'],['canManageBanks','Contas Bancárias'],['canViewReports','Relatórios'],['canManageUsers','Usuários'],['canSendPend','Enviar Pendências']].map(([perm,label])=>`<tr class="border-t border-slate-100"><td class="py-2 pr-4 text-slate-600">${label}</td>${Object.keys(RBAC.rules).map(r=>`<td class="py-2 px-2 text-center">${RBAC.rules[r][perm]?'✅':'–'}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div></div>`);
   },
   async openNew(){
-    UI.openModal({title:'+ Novo Usuário',size:'max-w-md',body:`<div class="space-y-4"><div><label class="adra-label">Nome Completo *</label><input id="usr-name" class="adra-input" /></div><div><label class="adra-label">Departamento</label><input id="usr-dept" class="adra-input" /></div><div><label class="adra-label">Papel *</label><select id="usr-role" class="adra-input">${Object.entries(ROLE_LABELS).filter(([k])=>k!=='demo').map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></div></div>`,
-      footer:`<button onclick="UI.closeModal()" class="adra-btn border border-slate-300 text-slate-600 hover:bg-slate-50">Cancelar</button><button onclick="ModUsuarios.saveNew()" class="adra-btn bg-adra-800 text-white hover:bg-adra-700">Criar</button>`});
+    const modeNote = S.demoMode
+      ? '<div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-700">🧪 Modo demo: usuário salvo localmente apenas.</div>'
+      : '<div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700">📧 O sistema criará a conta no Supabase Auth. O usuário poderá fazer login com este e-mail e senha.</div>';
+    UI.openModal({title:'+ Criar Novo Usuário',size:'max-w-md',body:`<div class="space-y-4">
+      ${modeNote}
+      <div><label class="adra-label">Nome Completo *</label><input id="usr-name" class="adra-input" placeholder="Ex: Ana Paula Souza" /></div>
+      <div><label class="adra-label">E-mail *</label><input id="usr-email" type="email" class="adra-input" placeholder="usuario@adra.org.br" /></div>
+      <div><label class="adra-label">Senha inicial *</label>
+        <input id="usr-pass" type="password" class="adra-input" placeholder="Minimo 6 caracteres" />
+        <p class="text-xs text-slate-400 mt-1">O usuario podera alterar a senha depois pelo "Esqueci a senha".</p>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div><label class="adra-label">Papel *</label>
+          <select id="usr-role" class="adra-input">${Object.entries(ROLE_LABELS).filter(([k])=>!['demo','admin'].includes(k)).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select>
+        </div>
+        <div><label class="adra-label">Departamento</label><input id="usr-dept" class="adra-input" placeholder="Ex: Contabilidade" /></div>
+      </div>
+      <div id="usr-error" class="hidden bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-700"></div>
+    </div>`,
+      footer:`<button onclick="UI.closeModal()" class="adra-btn border border-slate-300 text-slate-600 hover:bg-slate-50">Cancelar</button>
+              <button onclick="ModUsuarios.saveNew()" id="usr-save-btn" class="adra-btn bg-adra-800 text-white hover:bg-adra-700">Criar Usuário</button>`});
   },
+
   async saveNew(){
-    const name=document.getElementById('usr-name')?.value.trim();const role=document.getElementById('usr-role')?.value;
-    if(!name||!role){UI.toast('Preencha nome e papel','warning');return;}
-    await DB.insert('profiles',{id:'usr-'+Date.now(),full_name:name,role,department:document.getElementById('usr-dept')?.value.trim(),is_active:true});
-    UI.closeModal();UI.toast('✅ Usuário criado','success');await this.render();
+    const g  = id => document.getElementById(id)?.value.trim();
+    const name  = g('usr-name');
+    const email = g('usr-email');
+    const pass  = document.getElementById('usr-pass')?.value;
+    const role  = g('usr-role') || 'caixa';
+    const dept  = g('usr-dept');
+    const errEl = document.getElementById('usr-error');
+    const btn   = document.getElementById('usr-save-btn');
+
+    if(!name||!email){UI.toast('Preencha nome e e-mail','warning');return;}
+    if(!S.demoMode && (!pass||pass.length<6)){UI.toast('Senha deve ter ao menos 6 caracteres','warning');return;}
+
+    if(errEl) errEl.style.display='none';
+    if(btn){btn.disabled=true;btn.textContent='Criando...';}
+
+    try{
+      if(S.demoMode){
+        // Demo: apenas insere no localStorage
+        await DB.insert('profiles',{id:'usr-'+Date.now(),full_name:name,email,role,department:dept,is_active:true});
+        UI.closeModal();UI.toast('✅ Usuário criado (demo)','success');await this.render();return;
+      }
+
+      // 1) Cria o usuario no Supabase Auth
+      const{data:authData,error:authErr}=await sbClient.auth.signUp({
+        email,password:pass,
+        options:{data:{full_name:name}}
+      });
+
+      if(authErr) throw authErr;
+      if(!authData?.user) throw new Error('Erro ao criar usuario no Auth.');
+
+      // 2) Upsert perfil na tabela profiles
+      const{error:profErr}=await sbClient.from('profiles').upsert({
+        id: authData.user.id,
+        full_name: name,
+        email: email,
+        role: role,
+        department: dept||null,
+        is_active: true,
+      });
+
+      if(profErr) throw profErr;
+
+      UI.closeModal();
+      UI.toast(`✅ Usuario criado! ${authData.user.email_confirmed_at?'Pode fazer login agora.':'Verifique o email de confirmacao.'}`, 'success', 6000);
+      await this.render();
+
+    }catch(e){
+      const msgs={
+        'User already registered':'Este e-mail ja esta cadastrado.',
+        'Password should be at least 6 characters':'Senha deve ter ao menos 6 caracteres.',
+        'Unable to validate email address: invalid format':'E-mail invalido.',
+      };
+      const msg=msgs[e.message]||e.message||'Erro ao criar usuario.';
+      if(errEl){errEl.textContent=msg;errEl.style.display='block';}
+      if(btn){btn.disabled=false;btn.textContent='Criar Usuario';}
+    }
   },
+
   async editRole(id){
-    UI.openModal({title:'Alterar Papel',size:'max-w-xs',body:`<div><label class="adra-label">Novo Papel</label><select id="edit-role" class="adra-input">${Object.entries(ROLE_LABELS).filter(([k])=>k!=='demo').map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></div>`,
-      footer:`<button onclick="UI.closeModal()" class="adra-btn border border-slate-300 text-slate-600 hover:bg-slate-50">Cancelar</button><button onclick="ModUsuarios.saveRole('${id}')" class="adra-btn bg-adra-800 text-white hover:bg-adra-700">Salvar</button>`});
+    const{data:u}=await DB.getById('profiles',id);
+    if(!u)return;
+    UI.openModal({title:`Editar — ${u.full_name}`,size:'max-w-sm',body:`<div class="space-y-4">
+      <div><label class="adra-label">Nome</label><input id="edit-name" class="adra-input" value="${u.full_name}" /></div>
+      <div><label class="adra-label">Departamento</label><input id="edit-dept" class="adra-input" value="${u.department||''}" /></div>
+      <div><label class="adra-label">Papel</label>
+        <select id="edit-role" class="adra-input">${Object.entries(ROLE_LABELS).filter(([k])=>k!=='demo').map(([k,v])=>`<option value="${k}" ${k===u.role?'selected':''}>${v}</option>`).join('')}</select>
+      </div></div>`,
+      footer:`<button onclick="UI.closeModal()" class="adra-btn border border-slate-300 text-slate-600 hover:bg-slate-50">Cancelar</button>
+              <button onclick="ModUsuarios.saveRole('${id}')" class="adra-btn bg-adra-800 text-white hover:bg-adra-700">Salvar</button>`});
   },
-  async saveRole(id){await DB.update('profiles',id,{role:document.getElementById('edit-role')?.value});UI.closeModal();UI.toast('✅ Papel atualizado','success');await this.render();}
+
+  async saveRole(id){
+    await DB.update('profiles',id,{
+      full_name:document.getElementById('edit-name')?.value.trim(),
+      department:document.getElementById('edit-dept')?.value.trim(),
+      role:document.getElementById('edit-role')?.value,
+    });
+    UI.closeModal();UI.toast('✅ Usuario atualizado','success');await this.render();
+  },
+
+  async toggleActive(id,val){
+    await DB.update('profiles',id,{is_active:val});
+    UI.toast(val?'Usuario reativado':'Usuario desativado',val?'success':'info');
+    await this.render();
+  },
 };
 
 // ═══════════ MODULE: CONFIGURAÇÕES ═══════════
