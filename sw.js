@@ -1,125 +1,97 @@
 // =====================================================
-// ADRA – Service Worker  |  sw.js  |  v1.0.0
-// Estratégia: Cache-First para assets estáticos,
-//             Network-First para API Supabase.
+// ARF – Service Worker  |  sw.js  |  v1.1.0
+// Navegação, index.html, app.js e manifest: network-first (sempre a versão nova online).
+// Demais assets (ícones etc.): cache-first. Supabase e CDNs: nunca interceptados.
+// Para publicar uma versão nova, incremente CACHE_NAME.
 // =====================================================
 
-const CACHE_NAME    = 'adra-v1.0.0';
-const OFFLINE_PAGE  = './index.html';
+const CACHE_NAME   = 'arf-v1.1.0';
+const OFFLINE_PAGE = './index.html';
 
 const STATIC_ASSETS = [
-    './',
-    './index.html',
-    './app.js',
-    './manifest.json',
+  './', './index.html', './app.js', './manifest.json',
+  './icons/icon-72.png', './icons/icon-96.png', './icons/icon-128.png', './icons/icon-144.png',
+  './icons/icon-152.png', './icons/icon-192.png', './icons/icon-384.png', './icons/icon-512.png',
 ];
 
-// ── Install ──────────────────────────────────────────
 self.addEventListener('install', event => {
-    console.log('[SW] Instalando…');
-    event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then(cache => cache.addAll(STATIC_ASSETS))
-            .catch(err => console.warn('[SW] Erro no cache inicial:', err))
-    );
-    self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache =>
+      // um arquivo ausente não pode derrubar a instalação inteira
+      Promise.all(STATIC_ASSETS.map(u => cache.add(u).catch(err => console.warn('[SW] sem cache:', u, err))))
+    )
+  );
+  self.skipWaiting();
 });
 
-// ── Activate ─────────────────────────────────────────
 self.addEventListener('activate', event => {
-    console.log('[SW] Ativando…');
-    event.waitUntil(
-        caches.keys().then(keys =>
-            Promise.all(
-                keys
-                    .filter(k => k !== CACHE_NAME)
-                    .map(k => {
-                        console.log('[SW] Removendo cache antigo:', k);
-                        return caches.delete(k);
-                    })
-            )
-        )
-    );
-    self.clients.claim();
+  event.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
+  );
 });
 
-// ── Fetch ─────────────────────────────────────────────
 self.addEventListener('fetch', event => {
-    const req = event.request;
-    const url = new URL(req.url);
+  const req = event.request;
+  const url = new URL(req.url);
+  if (req.method !== 'GET' || url.origin !== location.origin) return;   // Supabase/CDNs passam direto
 
-    // Requisições não-GET, Supabase e CDNs → sempre network
-    if (req.method !== 'GET') return;
-    if (url.hostname.includes('supabase.co'))     return;
-    if (url.hostname.includes('jsdelivr.net'))    return;
-    if (url.hostname.includes('cdnjs.cloudflare')) return;
-    if (url.hostname.includes('cdn.tailwindcss')) return;
+  const p = url.pathname;
+  const critical = req.mode === 'navigate' || p.endsWith('/app.js') || p.endsWith('/index.html')
+                || p.endsWith('/manifest.json') || p.endsWith('/sw.js') || p.endsWith('/');
 
+  if (critical) {
     event.respondWith(
-        caches.match(req).then(cached => {
-            if (cached) return cached;
-
-            return fetch(req)
-                .then(response => {
-                    // Clonar e armazenar respostas válidas
-                    if (response && response.status === 200 && response.type !== 'opaque') {
-                        const clone = response.clone();
-                        caches.open(CACHE_NAME).then(c => c.put(req, clone));
-                    }
-                    return response;
-                })
-                .catch(() => {
-                    // Offline fallback: retorna página principal para navegação
-                    if (req.destination === 'document') {
-                        return caches.match(OFFLINE_PAGE);
-                    }
-                });
+      fetch(req)
+        .then(res => {
+          if (res && res.ok) { const copy = res.clone(); caches.open(CACHE_NAME).then(c => c.put(req, copy)); }
+          return res;
         })
+        .catch(() => caches.match(req).then(r => r || caches.match(OFFLINE_PAGE)))
     );
+    return;
+  }
+
+  event.respondWith(
+    caches.match(req).then(cached => cached || fetch(req).then(res => {
+      if (res && res.ok) { const copy = res.clone(); caches.open(CACHE_NAME).then(c => c.put(req, copy)); }
+      return res;
+    }).catch(() => Response.error()))
+  );
 });
 
-// ── Background Sync ───────────────────────────────────
 self.addEventListener('sync', event => {
-    if (event.tag === 'adra-sync-queue') {
-        event.waitUntil(
-            self.clients.matchAll().then(clients =>
-                clients.forEach(c => c.postMessage({ type: 'SYNC_COMPLETE' }))
-            )
-        );
-    }
+  if (event.tag === 'arf-sync-queue') {
+    event.waitUntil(
+      self.clients.matchAll().then(clients => clients.forEach(c => c.postMessage({ type: 'SYNC_COMPLETE' })))
+    );
+  }
 });
 
-// ── Push Notifications ────────────────────────────────
 self.addEventListener('push', event => {
-    const data = event.data?.json() ?? {};
-    event.waitUntil(
-        self.registration.showNotification(data.title ?? 'ADRA Finanças', {
-            body:    data.body    ?? 'Você tem uma nova notificação.',
-            icon:    './icons/icon-192.png',
-            badge:   './icons/icon-72.png',
-            vibrate: [200, 100, 200],
-            tag:     data.tag    ?? 'adra-default',
-            data:    { url: data.url ?? './' },
-            actions: [
-                { action: 'open',    title: 'Abrir'     },
-                { action: 'dismiss', title: 'Dispensar' },
-            ],
-        })
-    );
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch { data = {}; }
+  event.waitUntil(
+    self.registration.showNotification(data.title ?? 'ARF', {
+      body:    data.body ?? 'Você tem uma nova notificação.',
+      icon:    './icons/icon-192.png',
+      badge:   './icons/icon-72.png',
+      vibrate: [200, 100, 200],
+      tag:     data.tag ?? 'arf-default',
+      data:    { url: data.url ?? './' },
+      actions: [{ action: 'open', title: 'Abrir' }, { action: 'dismiss', title: 'Dispensar' }],
+    })
+  );
 });
 
 self.addEventListener('notificationclick', event => {
-    event.notification.close();
-    if (event.action !== 'dismiss') {
-        event.waitUntil(
-            clients.openWindow(event.notification.data?.url ?? './')
-        );
-    }
+  event.notification.close();
+  if (event.action !== 'dismiss') {
+    event.waitUntil(clients.openWindow(event.notification.data?.url ?? './'));
+  }
 });
 
-// ── Message: força atualização do SW ─────────────────
 self.addEventListener('message', event => {
-    if (event.data?.type === 'SKIP_WAITING') {
-        self.skipWaiting();
-    }
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
