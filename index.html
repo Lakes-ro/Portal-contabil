@@ -7,14 +7,14 @@
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="apple-mobile-web-app-title" content="ARF"/>
+  <link rel="icon" type="image/png" href="icons/icon-96.png"/>
+  <link rel="apple-touch-icon" href="icons/icon-192.png"/>
   <link rel="manifest" href="manifest.json"/>
-  <title>ARF - Gestao Contabil</title>
-  <meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'self'; frame-src 'none'; form-action 'self'; frame-ancestors 'self'">
-  <script>(function(){try{var t=localStorage.getItem('arf_theme');if(!t)t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';if(t==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+  <title>ARF - Gestão Contábil</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>tailwind.config={darkMode:'class',theme:{extend:{colors:{adra:{950:'#071525',900:'#0B2035',800:'#0F2D4E',700:'#153D6B',600:'#1A4B7A',500:'#2060A0',400:'#3B82C4',200:'#93C5E8',100:'#DBEEFF',50:'#F0F7FF'}}}}}</script>
+  <script>tailwind.config={theme:{extend:{colors:{brand:{950:'#071525',900:'#0B2035',800:'#0F2D4E',700:'#153D6B',600:'#1A4B7A',500:'#2060A0',400:'#3B82C4',200:'#93C5E8',100:'#DBEEFF',50:'#F0F7FF'}}}}}</script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" integrity="sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     *{font-family:'Inter',system-ui,sans-serif}
@@ -39,10 +39,10 @@
       #sidebar-overlay.open{display:block}
     }
     .modal-backdrop{backdrop-filter:blur(3px)}
-    .adra-input{display:block;width:100%;border:1px solid #CBD5E1;border-radius:.5rem;padding:.5rem .75rem;font-size:.875rem;color:#1E293B;background:#fff;outline:none;transition:box-shadow .15s,border-color .15s;font-family:inherit;box-sizing:border-box}
-    .adra-input:focus{border-color:#3B82F6;box-shadow:0 0 0 3px rgba(59,130,246,.15)}
-    .adra-label{display:block;font-size:.65rem;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.25rem}
-    .adra-btn{display:inline-flex;align-items:center;gap:.5rem;padding:.5rem 1rem;border-radius:.5rem;font-size:.875rem;font-weight:600;transition:all .15s;cursor:pointer;border:none;font-family:inherit}
+    .brand-input{display:block;width:100%;border:1px solid #CBD5E1;border-radius:.5rem;padding:.5rem .75rem;font-size:.875rem;color:#1E293B;background:#fff;outline:none;transition:box-shadow .15s,border-color .15s;font-family:inherit;box-sizing:border-box}
+    .brand-input:focus{border-color:#3B82F6;box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+    .brand-label{display:block;font-size:.65rem;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.25rem}
+    .brand-btn{display:inline-flex;align-items:center;gap:.5rem;padding:.5rem 1rem;border-radius:.5rem;font-size:.875rem;font-weight:600;transition:all .15s;cursor:pointer;border:none;font-family:inherit}
     .badge{display:inline-flex;align-items:center;gap:.25rem;padding:.125rem .5rem;border-radius:9999px;font-size:.75rem;font-weight:600}
     .badge-pendente{background:#FEF3C7;color:#92400E}
     .badge-aprovada{background:#DBEAFE;color:#1E40AF}
@@ -58,132 +58,12 @@
     .kpi-blue::before{background:#3B82F6}.kpi-green::before{background:#10B981}
     .kpi-amber::before{background:#F59E0B}.kpi-red::before{background:#EF4444}
     .kpi-purple::before{background:#8B5CF6}
-    .adra-table{width:100%;font-size:.875rem}
-    .adra-table thead th{padding:.75rem 1rem;text-align:left;font-size:.7rem;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.05em;background:#F8FAFC;border-bottom:1px solid #E2E8F0}
-    .adra-table tbody td{padding:.75rem 1rem;color:#334155;border-bottom:1px solid #F1F5F9}
-    .adra-table tbody tr:hover{background:#F8FAFC}
+    .brand-table{width:100%;font-size:.875rem}
+    .brand-table thead th{padding:.75rem 1rem;text-align:left;font-size:.7rem;font-weight:600;color:#64748B;text-transform:uppercase;letter-spacing:.05em;background:#F8FAFC;border-bottom:1px solid #E2E8F0}
+    .brand-table tbody td{padding:.75rem 1rem;color:#334155;border-bottom:1px solid #F1F5F9}
+    .brand-table tbody tr:hover{background:#F8FAFC}
     #pix-qr-code canvas,#pix-qr-code img{border-radius:8px}
-
-    /* ===== Pendências contábeis ===== */
-    .pc-editor{width:100%;min-height:160px;background:#fff;border:1px solid #CBD5E1;color:#1E293B;padding:.6rem .75rem;border-radius:.5rem;font-size:.875rem;overflow-y:auto;outline:none;line-height:1.6}
-    .arf-chip{display:inline-block;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:4px 10px;color:#1D4ED8;text-decoration:none;font-size:.8rem;margin:3px 2px}
-    .arf-chip span{font-size:.7rem;opacity:.65}
-    html.dark .arf-chip{background:#1E293B;border-color:#334155;color:#93C5FD}
-    .pc-editor:focus{border-color:#3B82F6;box-shadow:0 0 0 3px rgba(59,130,246,.15)}
-    .pc-editor:empty:before{content:attr(data-placeholder);color:#94A3B8;cursor:text}
-    .pc-editor img,.pc-anot img{max-width:100%;height:auto;border-radius:6px;margin:6px 0;border:1px solid #E2E8F0;display:block;cursor:zoom-in}
-    .pc-editor ul,.pc-anot ul{list-style:disc;margin-left:1.25rem}
-    .pc-editor ol,.pc-anot ol{list-style:decimal;margin-left:1.25rem}
-    .pc-tb button{background:#F1F5F9;color:#334155;border:1px solid #E2E8F0;padding:.2rem .55rem;border-radius:.35rem;cursor:pointer;font-size:.78rem}
-    .pc-tb button:hover{background:#E2E8F0}
-    .pc-anot{font-size:.8rem;line-height:1.55;color:#475569;margin-top:.5rem;padding:.6rem .75rem;background:#F8FAFC;border-left:3px solid #CBD5E1;border-radius:.4rem}
-    .pc-th{cursor:pointer;user-select:none}
-    .pc-th:hover{color:#2563EB!important}
-    .pc-th.asc::after{content:" ↑";color:#2563EB}
-    .pc-th.desc::after{content:" ↓";color:#2563EB}
-    .pc-filter{border:none;background:none;color:#64748B;font-size:.8rem;padding:.3rem .65rem;border-radius:.4rem;cursor:pointer;white-space:nowrap;font-family:inherit}
-    .pc-filter.active{background:#E2E8F0;color:#0F172A;font-weight:700}
-    .pc-swatch{width:22px;height:22px;border-radius:50%;border:3px solid transparent;cursor:pointer;padding:0;transition:.15s}
-    .pc-swatch.active{border-color:#0F172A}
-    .pc-swatch:hover{transform:scale(1.15)}
-    #lightbox{display:none;position:fixed;z-index:9999;inset:0;background:rgba(0,0,0,.92);align-items:center;justify-content:center;cursor:zoom-out}
-    #lightbox.active{display:flex}
-    #lightbox img{max-width:95vw;max-height:92vh;border-radius:6px;cursor:default}
-    #lightbox .close-lb{position:absolute;top:14px;right:22px;color:#fff;font-size:2.2rem;cursor:pointer;opacity:.7;line-height:1}
-    .calc-widget{display:none;position:fixed;bottom:20px;right:20px;width:260px;background:#fff;border:1px solid #CBD5E1;border-radius:12px;box-shadow:0 15px 35px rgba(0,0,0,.35);z-index:70;overflow:hidden;user-select:none}
-    .calc-header{background:#0F2D4E;color:#fff;padding:.55rem .75rem;display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:.85rem;cursor:grab}
-    .calc-display{background:#0B2035;color:#fff;text-align:right;padding:.8rem 1rem;font-size:1.4rem;font-family:monospace;min-height:56px;word-break:break-all}
-    .calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#E2E8F0}
-    .calc-btn{background:#fff;border:none;padding:.85rem 0;font-size:1.05rem;color:#1E293B;cursor:pointer}
-    .calc-btn:hover{background:#F1F5F9}
-    .calc-btn.op{background:#EFF6FF;color:#1D4ED8}
-    .calc-btn.eq{background:#0F2D4E;color:#fff;font-weight:700}
-    .calc-btn.cl{background:#FEF2F2;color:#B91C1C}
-
-    /* ===== Modo escuro (html.dark) ===== */
-    html.dark{color-scheme:dark}
-    html.dark body{background:#0B1220;color:#CBD5E1}
-    html.dark .bg-white{background-color:#111C2F}
-    html.dark .bg-slate-50,html.dark .bg-slate-50\/60{background-color:#16233A}
-    html.dark .bg-slate-100{background-color:#1B2A42}
-    html.dark body.bg-slate-100{background-color:#0B1220}
-    html.dark .hover\:bg-slate-50:hover,html.dark .hover\:bg-slate-100:hover,html.dark .hover\:bg-white:hover{background-color:#1D2D47}
-    html.dark .text-slate-800,html.dark .text-slate-900{color:#E8EEF7}
-    html.dark .text-slate-700{color:#D3DCE9}
-    html.dark .text-slate-600{color:#B6C2D3}
-    html.dark .text-slate-500{color:#94A3B8}
-    html.dark .text-slate-400{color:#7D8DA6}
-    html.dark .hover\:text-slate-700:hover,html.dark .hover\:text-slate-600:hover{color:#E2E8F0}
-    html.dark .border-slate-100,html.dark .border-slate-200,html.dark .divide-slate-100>*+*{border-color:#243450}
-    html.dark .border-slate-300{border-color:#34476A}
-    html.dark .text-emerald-800,html.dark .text-emerald-700,html.dark .text-emerald-600{color:#6EE7B7}
-    html.dark .text-red-800,html.dark .text-red-700,html.dark .text-red-600,html.dark .text-red-500{color:#FCA5A5}
-    html.dark .text-blue-800,html.dark .text-blue-700,html.dark .text-blue-600{color:#93C5FD}
-    html.dark .text-amber-700,html.dark .text-amber-600{color:#FCD34D}
-    html.dark .text-orange-700,html.dark .text-orange-600{color:#FDBA74}
-    html.dark .text-purple-700{color:#C4B5FD}
-    html.dark .text-indigo-800,html.dark .text-indigo-700,html.dark .text-indigo-600{color:#A5B4FC}
-    html.dark .bg-emerald-50,html.dark .bg-emerald-100{background-color:rgba(16,185,129,.16)}
-    html.dark .bg-red-50,html.dark .bg-red-100{background-color:rgba(239,68,68,.16)}
-    html.dark .bg-blue-50,html.dark .bg-blue-100{background-color:rgba(59,130,246,.18)}
-    html.dark .bg-amber-50,html.dark .bg-amber-100,html.dark .bg-amber-200{background-color:rgba(245,158,11,.16)}
-    html.dark .bg-orange-100{background-color:rgba(249,115,22,.16)}
-    html.dark .bg-purple-100{background-color:rgba(139,92,246,.18)}
-    html.dark .bg-indigo-50,html.dark .bg-indigo-100{background-color:rgba(99,102,241,.18)}
-    html.dark .hover\:bg-red-50:hover{background-color:rgba(239,68,68,.14)}
-    html.dark .hover\:bg-emerald-50:hover{background-color:rgba(16,185,129,.14)}
-    html.dark .hover\:bg-blue-50:hover,html.dark .hover\:bg-indigo-50:hover{background-color:rgba(59,130,246,.16)}
-    html.dark .border-red-200,html.dark .border-red-300{border-color:rgba(239,68,68,.45)}
-    html.dark .border-emerald-200,html.dark .border-emerald-300{border-color:rgba(16,185,129,.45)}
-    html.dark .border-amber-200{border-color:rgba(245,158,11,.45)}
-    html.dark .border-blue-200,html.dark .border-indigo-200{border-color:rgba(99,102,241,.45)}
-    html.dark .bg-adra-100{background-color:rgba(59,130,246,.18)}
-    html.dark .bg-adra-50{background-color:rgba(59,130,246,.1)}
-    html.dark .text-adra-800,html.dark .text-adra-700{color:#93C5FD}
-    html.dark #topbar{background:#111C2F;border-color:#243450}
-    html.dark #main-content::-webkit-scrollbar-track{background:#0B1220}
-    html.dark #main-content::-webkit-scrollbar-thumb{background:#34476A}
-    html.dark #global-search{background:#16233A;color:#E2E8F0}
-    html.dark #global-search:focus{background:#1B2A42;border-color:#34476A}
-    html.dark .adra-input{background:#0F1A2D;color:#E2E8F0;border-color:#2E4162}
-    html.dark .adra-input::placeholder{color:#6B7C97}
-    html.dark .adra-input:focus{border-color:#60A5FA;box-shadow:0 0 0 3px rgba(96,165,250,.2)}
-    html.dark .adra-label{color:#8FA0BA}
-    html.dark .adra-table thead th{background:#16233A;color:#8FA0BA;border-color:#243450}
-    html.dark .adra-table tbody td{color:#CBD5E1;border-color:#1D2C45}
-    html.dark .adra-table tbody tr:hover{background:#16233A}
-    html.dark .kpi-card{background:#111C2F;border-color:#243450}
-    html.dark .badge-pendente,html.dark .badge-aberta{background:rgba(245,158,11,.18);color:#FCD34D}
-    html.dark .badge-aprovada,html.dark .badge-em_analise{background:rgba(59,130,246,.2);color:#93C5FD}
-    html.dark .badge-pix_gerado{background:rgba(139,92,246,.2);color:#C4B5FD}
-    html.dark .badge-pago_conciliado,html.dark .badge-resolvida{background:rgba(16,185,129,.18);color:#6EE7B7}
-    html.dark .badge-divergencia{background:rgba(239,68,68,.18);color:#FCA5A5}
-    html.dark .badge-cancelada{background:#1B2A42;color:#A8B6CB}
-    html.dark #modal-box{background:#111C2F}
-    html.dark #modal-header{border-color:#243450}
-    html.dark #modal-footer{background:#0F1A2D;border-color:#243450}
-    html.dark .pc-editor{background:#0F1A2D;border-color:#2E4162;color:#E2E8F0}
-    html.dark .pc-editor:focus{border-color:#60A5FA;box-shadow:0 0 0 3px rgba(96,165,250,.2)}
-    html.dark .pc-editor:empty:before{color:#6B7C97}
-    html.dark .pc-editor img,html.dark .pc-anot img{border-color:#2E4162}
-    html.dark .pc-tb button{background:#1B2A42;color:#CBD5E1;border-color:#2E4162}
-    html.dark .pc-tb button:hover{background:#243656}
-    html.dark .pc-anot{background:#16233A;color:#B6C2D3;border-left-color:#34476A}
-    html.dark .pc-th:hover,html.dark .pc-th.asc::after,html.dark .pc-th.desc::after{color:#60A5FA!important}
-    html.dark .pc-filter{color:#8FA0BA}
-    html.dark .pc-filter.active{background:#243656;color:#F1F5F9}
-    html.dark .pc-swatch.active{border-color:#F1F5F9}
-    html.dark .calc-widget{background:#111C2F;border-color:#2E4162}
-    html.dark .calc-grid{background:#243450}
-    html.dark .calc-btn{background:#111C2F;color:#E2E8F0}
-    html.dark .calc-btn:hover{background:#1B2A42}
-    html.dark .calc-btn.op{background:rgba(59,130,246,.18);color:#93C5FD}
-    html.dark .calc-btn.eq{background:#2563EB;color:#fff}
-    html.dark .calc-btn.cl{background:rgba(239,68,68,.18);color:#FCA5A5}
-    html.dark .bg-adra-800.text-white{box-shadow:inset 0 0 0 1px rgba(147,197,253,.35)}
-    html.dark code{background:#1B2A42!important;color:#CBD5E1}
-    html.dark details{border-color:#243450}
-    @media print{#sidebar,#topbar,#install-banner,#toast-container,.calc-widget{display:none!important}}
+    @media print{#sidebar,#topbar,#install-banner,#toast-container{display:none!important}}
   </style>
 </head>
 <body class="h-full bg-slate-100 antialiased overflow-hidden">
@@ -197,21 +77,22 @@
   </div>
   <div class="slide-up" style="background:rgba(255,255,255,.96);border-radius:1.25rem;box-shadow:0 30px 60px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.1);width:100%;max-width:380px;padding:2.25rem;position:relative">
     <div style="text-align:center;margin-bottom:2rem">
-      <div style="width:60px;height:60px;background:#0F2D4E;border-radius:1rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;font-weight:900;margin:0 auto 1rem;box-shadow:0 8px 20px rgba(15,45,78,.5)">ARF</div>
-      <h1 style="font-size:1.25rem;font-weight:900;color:#0B2035;margin:0 0 .3rem">Loja ARF</h1>
-      <p style="font-size:.8rem;color:#64748B;margin:0;line-height:1.5">Gestao Contabil - Fechamento e Pendencias</p>
+      <div style="width:60px;height:60px;background:#0F2D4E;border-radius:1rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;font-weight:900;margin:0 auto 1rem;box-shadow:0 8px 20px rgba(15,45,78,.5)">ARF</div>
+      <h1 style="font-size:1.25rem;font-weight:900;color:#0B2035;margin:0 0 .3rem">ARF Gestão Contábil</h1>
+      <p style="font-size:.8rem;color:#64748B;margin:0;line-height:1.5">Sistema de Gestão Contábil e Operacional</p>
     </div>
     <form id="login-form" onsubmit="Auth.handleLogin(event)">
       <div style="margin-bottom:1.1rem">
         <label style="display:block;font-size:.68rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">E-mail</label>
-        <input id="login-email" type="email" autocomplete="email" required placeholder="seu@email.com" class="adra-input" style="font-size:.9rem;padding:.65rem .875rem"/>
+        <input id="login-email" type="email" autocomplete="email" required placeholder="seu@email.com" class="brand-input" style="font-size:.9rem;padding:.65rem .875rem"/>
       </div>
       <div style="margin-bottom:1.1rem">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem">
           <label style="font-size:.68rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.06em">Senha</label>
           <button type="button" onclick="Auth.showForgotPassword()" style="background:none;border:none;font-size:.75rem;color:#3B82F6;cursor:pointer;font-family:inherit;padding:0">Esqueci a senha</button>
         </div>
-        <input id="login-password" type="password" autocomplete="current-password" required placeholder="••••••••" class="adra-input" style="font-size:.9rem;padding:.65rem .875rem"/>
+        <input id="login-password" type="password" autocomplete="current-password" required placeholder="••••••••" class="brand-input" style="font-size:.9rem;padding:.65rem .875rem"/>
+        <button type="button" onclick="Auth.togglePasswordVisibility()" style="background:none;border:none;font-size:.72rem;color:#64748B;cursor:pointer;margin-top:.35rem;font-family:inherit;padding:0">👁 Mostrar/ocultar senha</button>
       </div>
       <div id="login-error" style="display:none;background:#FEF2F2;border:1px solid #FECACA;border-radius:.5rem;padding:.6rem .75rem;font-size:.78rem;color:#B91C1C;margin-bottom:.9rem;line-height:1.4"></div>
       <button type="submit" id="login-btn"
@@ -224,27 +105,27 @@
       <button onclick="Auth.enterDemoMode()"
               style="background:none;border:none;font-size:.75rem;color:#94A3B8;cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-family:inherit;transition:color .15s"
               onmouseover="this.style.color='#0F2D4E'" onmouseout="this.style.color='#94A3B8'">
-        Entrar no modo demonstracao
+        Entrar no modo demonstração
       </button>
     </div>
-    <p style="text-align:center;font-size:.68rem;color:#CBD5E1;margin-top:.75rem">Loja ARF - v1.1.0</p>
+    <p style="text-align:center;font-size:.68rem;color:#CBD5E1;margin-top:.75rem">ARF - v1.1.0</p>
   </div>
 </div>
 
 <!-- ========================== PWA BANNERS ========================== -->
-<div id="install-banner" class="hidden fixed bottom-0 left-0 right-0 z-[60] bg-adra-800 text-white shadow-2xl" style="padding-bottom:env(safe-area-inset-bottom)">
+<div id="install-banner" class="hidden fixed bottom-0 left-0 right-0 z-[60] bg-brand-800 text-white shadow-2xl" style="padding-bottom:env(safe-area-inset-bottom)">
   <div class="flex items-center gap-3 px-4 py-3">
-    <div class="w-11 h-11 bg-white/15 rounded-xl flex items-center justify-center text-sm font-black flex-shrink-0">ARF</div>
-    <div class="flex-1 min-w-0"><p class="font-bold text-sm">Instalar Loja ARF</p><p class="text-xs text-blue-200">Acesso offline e notificacoes</p></div>
+    <div class="w-11 h-11 bg-white/15 rounded-xl flex items-center justify-center text-lg font-black flex-shrink-0">ARF</div>
+    <div class="flex-1 min-w-0"><p class="font-bold text-sm">Instalar o ARF</p><p class="text-xs text-blue-200">Acesso offline e notificações</p></div>
     <button id="install-btn" class="flex-shrink-0 bg-blue-500 hover:bg-blue-400 text-white text-sm font-bold px-4 py-2 rounded-lg">Instalar</button>
     <button id="install-dismiss" class="text-blue-300 hover:text-white px-2 text-lg">x</button>
   </div>
 </div>
-<div id="ios-install-banner" class="hidden fixed bottom-0 left-0 right-0 z-[60] bg-adra-800 text-white px-4 pt-4 shadow-2xl" style="padding-bottom:calc(1rem + env(safe-area-inset-bottom))">
+<div id="ios-install-banner" class="hidden fixed bottom-0 left-0 right-0 z-[60] bg-brand-800 text-white px-4 pt-4 shadow-2xl" style="padding-bottom:calc(1rem + env(safe-area-inset-bottom))">
   <button id="ios-banner-close" class="absolute top-3 right-4 text-blue-300 text-lg">x</button>
   <div class="flex gap-3 items-start pr-6">
     <span class="text-2xl">📲</span>
-    <div><p class="font-bold text-sm mb-1">Instalar no iPhone/iPad</p><p class="text-xs text-blue-200">Toque em Compartilhar e depois em "Adicionar a Tela de Inicio".</p></div>
+    <div><p class="font-bold text-sm mb-1">Instalar no iPhone/iPad</p><p class="text-xs text-blue-200">Toque em Compartilhar e depois em "Adicionar à Tela de Início".</p></div>
   </div>
 </div>
 
@@ -253,70 +134,67 @@
   <div id="sidebar-overlay" class="fixed inset-0 z-30 bg-black/50 hidden" onclick="App.closeSidebar()"></div>
 
   <!-- SIDEBAR -->
-  <aside id="sidebar" class="w-64 bg-adra-800 text-white flex flex-col flex-shrink-0 h-screen overflow-hidden" style="min-width:256px">
+  <aside id="sidebar" class="w-64 bg-brand-800 text-white flex flex-col flex-shrink-0 h-screen overflow-hidden" style="min-width:256px">
     <div class="px-5 py-4 border-b border-white/10 flex items-center gap-3">
       <div class="w-9 h-9 bg-white/15 rounded-lg flex items-center justify-center font-black text-xs select-none">ARF</div>
-      <div class="min-w-0"><p class="font-bold text-sm leading-tight">Loja ARF</p><p class="text-xs text-adra-200 truncate">Gestao Contabil</p></div>
+      <div class="min-w-0"><p class="font-bold text-sm leading-tight">ARF</p><p class="text-xs text-brand-200 truncate">Gestão Contábil</p></div>
     </div>
     <div id="sidebar-user" class="px-5 py-3 border-b border-white/10">
       <div class="flex items-center gap-3">
         <div id="user-avatar" class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">AR</div>
         <div class="min-w-0">
           <p id="user-name" class="text-xs font-semibold leading-tight text-white truncate">-</p>
-          <p id="user-role" class="text-xs text-adra-200 truncate">-</p>
+          <p id="user-role" class="text-xs text-brand-200 truncate">-</p>
         </div>
       </div>
     </div>
     <div class="px-5 py-3 border-b border-white/10">
-      <label class="text-[10px] text-adra-200 uppercase tracking-widest font-semibold block mb-1.5">Competencia</label>
-      <input type="month" id="period-selector" class="w-full bg-white/10 text-white text-xs rounded-lg px-2 py-1.5 border border-white/20 focus:border-adra-400 focus:outline-none cursor-pointer"/>
+      <label class="text-[10px] text-brand-200 uppercase tracking-widest font-semibold block mb-1.5">Período de Competência</label>
+      <input type="month" id="period-selector" class="w-full bg-white/10 text-white text-xs rounded-lg px-2 py-1.5 border border-white/20 focus:border-brand-400 focus:outline-none cursor-pointer"/>
     </div>
     <nav id="sidebar-nav" class="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
       <div>
-        <button class="w-full flex items-center justify-between px-3 py-1.5 text-[10px] text-adra-200 uppercase tracking-widest font-semibold rounded hover:bg-white/5" onclick="App.toggleNavSection('favorites')">
+        <button class="w-full flex items-center justify-between px-3 py-1.5 text-[10px] text-brand-200 uppercase tracking-widest font-semibold rounded hover:bg-white/5" onclick="App.toggleNavSection('favorites')">
           <span>Favoritos</span><span id="chv-favorites" class="text-sm transition-transform">v</span>
         </button>
-        <div id="sec-favorites" class="ml-2"><div id="favorites-list"><p class="text-xs text-adra-200/50 px-3 py-1.5 italic">Nenhum favorito</p></div></div>
+        <div id="sec-favorites" class="ml-2"><div id="favorites-list"><p class="text-xs text-brand-200/50 px-3 py-1.5 italic">Nenhum favorito</p></div></div>
       </div>
       <div>
-        <button class="w-full flex items-center justify-between px-3 py-1.5 text-[10px] text-adra-200 uppercase tracking-widest font-semibold rounded hover:bg-white/5" onclick="App.toggleNavSection('routine')">
+        <button class="w-full flex items-center justify-between px-3 py-1.5 text-[10px] text-brand-200 uppercase tracking-widest font-semibold rounded hover:bg-white/5" onclick="App.toggleNavSection('routine')">
           <span>Rotina Mensal</span><span id="chv-routine" class="text-sm">v</span>
         </button>
         <div id="sec-routine" class="ml-2 space-y-0.5">
-          <a href="#" class="nav-item flex items-center gap-2 px-3 py-2 text-sm text-adra-100 rounded-lg" data-module="pendencias" onclick="App.navigate('pendencias');return false;"><span>📋</span><span class="flex-1">Pendencias</span><span id="badge-pend" class="hidden text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-400 text-white">0</span></a>
-          <!-- Notas Fiscais: desativado por enquanto (codigo preservado). Ative em FEATURES.notasFiscais no app.js -->
-          <a href="#" data-feature="notasFiscais" class="hidden nav-item flex items-center gap-2 px-3 py-2 text-sm text-adra-100 rounded-lg" data-module="notas-fiscais" onclick="App.navigate('notas-fiscais');return false;"><span>🧾</span><span class="flex-1">Notas Fiscais</span><span id="badge-nf" class="hidden text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-400 text-amber-900">0</span></a>
-          <a href="#" data-feature="notasFiscais" class="hidden nav-item flex items-center gap-2 px-3 py-2 text-sm text-adra-100 rounded-lg" data-module="pix" onclick="App.navigate('pix');return false;"><span>🏦</span><span>Pix e Pagamentos</span></a>
-        </div>
-      </div>
-      <div data-feature="notasFiscais" class="hidden">
-        <button class="w-full flex items-center justify-between px-3 py-1.5 text-[10px] text-adra-200 uppercase tracking-widest font-semibold rounded hover:bg-white/5" onclick="App.toggleNavSection('reports')">
-          <span>Relatorios</span><span id="chv-reports" class="text-sm">v</span>
-        </button>
-        <div id="sec-reports" class="ml-2 space-y-0.5">
-          <a href="#" class="nav-item flex items-center gap-2 px-3 py-2 text-sm text-adra-100 rounded-lg" data-module="relatorio-mensal" onclick="App.navigate('relatorio-mensal');return false;"><span>📋</span><span>Balancete Mensal</span></a>
-          <a href="#" class="nav-item flex items-center gap-2 px-3 py-2 text-sm text-adra-100 rounded-lg" data-module="relatorio-projetos" onclick="App.navigate('relatorio-projetos');return false;"><span>📈</span><span>Rel. de Projetos</span></a>
+          <a href="#" class="nav-item flex items-center gap-2 px-3 py-2 text-sm text-brand-100 rounded-lg" data-module="notas-fiscais" onclick="App.navigate('notas-fiscais');return false;"><span>🧾</span><span class="flex-1">Notas Fiscais</span><span id="badge-nf" class="hidden text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-400 text-amber-900">0</span></a>
+          <a href="#" class="nav-item flex items-center gap-2 px-3 py-2 text-sm text-brand-100 rounded-lg" data-module="pendencias" onclick="App.navigate('pendencias');return false;"><span>💬</span><span class="flex-1">Pendências</span><span id="badge-pend" class="hidden text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-400 text-white">0</span></a>
+          <a href="#" class="nav-item flex items-center gap-2 px-3 py-2 text-sm text-brand-100 rounded-lg" data-module="pix" onclick="App.navigate('pix');return false;"><span>🏦</span><span>Pix e Pagamentos</span></a>
         </div>
       </div>
       <div>
-        <button class="w-full flex items-center justify-between px-3 py-1.5 text-[10px] text-adra-200 uppercase tracking-widest font-semibold rounded hover:bg-white/5" onclick="App.toggleNavSection('tools')">
+        <button class="w-full flex items-center justify-between px-3 py-1.5 text-[10px] text-brand-200 uppercase tracking-widest font-semibold rounded hover:bg-white/5" onclick="App.toggleNavSection('reports')">
+          <span>Relatórios</span><span id="chv-reports" class="text-sm">v</span>
+        </button>
+        <div id="sec-reports" class="ml-2 space-y-0.5">
+          <a href="#" class="nav-item flex items-center gap-2 px-3 py-2 text-sm text-brand-100 rounded-lg" data-module="relatorio-mensal" data-perm="canViewReports" onclick="App.navigate('relatorio-mensal');return false;"><span>📋</span><span>Balancete Mensal</span></a>
+          <a href="#" class="nav-item flex items-center gap-2 px-3 py-2 text-sm text-brand-100 rounded-lg" data-module="relatorio-projetos" data-perm="canViewReports" onclick="App.navigate('relatorio-projetos');return false;"><span>📈</span><span>Rel. de Projetos</span></a>
+        </div>
+      </div>
+      <div>
+        <button class="w-full flex items-center justify-between px-3 py-1.5 text-[10px] text-brand-200 uppercase tracking-widest font-semibold rounded hover:bg-white/5" onclick="App.toggleNavSection('tools')">
           <span>Ferramentas</span><span id="chv-tools" class="text-sm">v</span>
         </button>
         <div id="sec-tools" class="ml-2 space-y-0.5">
-          <a href="#" class="nav-item flex items-center gap-2 px-3 py-2 text-sm text-adra-100 rounded-lg" data-module="dashboard" onclick="App.navigate('dashboard');return false;"><span>🏠</span><span>Dashboard</span></a>
-          <a href="#" class="nav-item flex items-center gap-2 px-3 py-2 text-sm text-adra-100 rounded-lg" onclick="ModPendencias.openFuncionarios();App.closeSidebar();return false;"><span>👥</span><span>Funcionarios</span></a>
-          <a href="#" class="nav-item flex items-center gap-2 px-3 py-2 text-sm text-adra-100 rounded-lg" onclick="Calc.toggle();return false;"><span>🧮</span><span>Calculadora</span></a>
-          <a href="#" data-feature="notasFiscais" class="hidden nav-item flex items-center gap-2 px-3 py-2 text-sm text-adra-100 rounded-lg" data-module="projetos" onclick="App.navigate('projetos');return false;"><span>📁</span><span>Projetos</span></a>
-          <a href="#" data-feature="notasFiscais" class="hidden nav-item flex items-center gap-2 px-3 py-2 text-sm text-adra-100 rounded-lg" data-module="contas-bancarias" onclick="App.navigate('contas-bancarias');return false;"><span>🏛️</span><span>Contas Bancarias</span></a>
-          <a href="#" class="nav-item flex items-center gap-2 px-3 py-2 text-sm text-adra-100 rounded-lg" data-module="usuarios" onclick="App.navigate('usuarios');return false;"><span>👤</span><span>Usuarios e Papeis</span></a>
+          <a href="#" class="nav-item flex items-center gap-2 px-3 py-2 text-sm text-brand-100 rounded-lg" data-module="dashboard" onclick="App.navigate('dashboard');return false;"><span>🏠</span><span>Dashboard</span></a>
+          <a href="#" class="nav-item flex items-center gap-2 px-3 py-2 text-sm text-brand-100 rounded-lg" data-module="projetos" onclick="App.navigate('projetos');return false;"><span>📁</span><span>Projetos</span></a>
+          <a href="#" class="nav-item flex items-center gap-2 px-3 py-2 text-sm text-brand-100 rounded-lg" data-module="contas-bancarias" data-perm="canManageBanks" onclick="App.navigate('contas-bancarias');return false;"><span>🏛️</span><span>Contas Bancárias</span></a>
+          <a href="#" class="nav-item flex items-center gap-2 px-3 py-2 text-sm text-brand-100 rounded-lg" data-module="usuarios" data-perm="canManageUsers" onclick="App.navigate('usuarios');return false;"><span>👥</span><span>Usuários e Papéis</span></a>
         </div>
       </div>
     </nav>
     <div class="px-5 py-3 border-t border-white/10 flex items-center justify-between">
-      <button onclick="App.navigate('configuracoes')" class="flex items-center gap-2 text-xs text-adra-200 hover:text-white transition-colors">
-        <span>⚙️</span><span>Configuracoes</span>
+      <button onclick="App.navigate('configuracoes')" class="flex items-center gap-2 text-xs text-brand-200 hover:text-white transition-colors">
+        <span>⚙️</span><span>Configurações</span>
       </button>
-      <button onclick="Auth.logout()" class="text-xs text-adra-200 hover:text-red-300 transition-colors" title="Sair do sistema">
+      <button onclick="Auth.logout()" class="text-xs text-brand-200 hover:text-red-300 transition-colors" title="Sair do sistema">
         🚪 Sair
       </button>
     </div>
@@ -329,15 +207,15 @@
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
       </button>
       <div class="flex-1 flex items-center gap-2 text-sm min-w-0">
-        <span class="font-bold text-adra-800 hidden sm:block">ARF</span>
+        <span class="font-bold text-brand-800 hidden sm:block">ARF</span>
         <span class="text-slate-400 hidden sm:block">›</span>
-        <span id="breadcrumb-current" class="text-slate-600 font-medium truncate">Pendencias</span>
+        <span id="breadcrumb-current" class="text-slate-600 font-medium truncate">Dashboard</span>
       </div>
       <div class="relative hidden sm:block">
-        <input type="text" id="global-search" placeholder="Buscar..." class="bg-slate-100 border border-transparent rounded-lg pl-3 pr-3 py-1.5 text-sm w-44 focus:w-60 transition-all focus:bg-white focus:border-slate-300 focus:outline-none" oninput="App.handleSearch(this.value)"/>
+        <input type="text" id="global-search" autocomplete="off" placeholder="Buscar notas, projetos, pendências…" class="bg-slate-100 border border-transparent rounded-lg pl-3 pr-3 py-1.5 text-sm w-44 focus:w-72 transition-all focus:bg-white focus:border-slate-300 focus:outline-none" oninput="App.handleSearch(this.value)"/>
+        <div id="search-results" class="hidden absolute right-0 mt-1 w-80 max-h-80 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-xl p-1 z-50"></div>
       </div>
-      <button id="theme-btn" aria-label="Alternar tema" class="p-1.5 rounded-lg text-slate-500 hover:text-adra-800 hover:bg-slate-100 transition-colors" onclick="Theme.toggle()" title="Alternar modo claro/escuro" aria-label="Alternar modo claro/escuro">🌙</button>
-      <button id="notif-btn" class="relative p-1.5 rounded-lg text-slate-500 hover:text-adra-800 hover:bg-slate-100 transition-colors" onclick="App.showNotifications()">
+      <button id="notif-btn" class="relative p-1.5 rounded-lg text-slate-500 hover:text-brand-800 hover:bg-slate-100 transition-colors" onclick="App.showNotifications()">
         🔔<span id="notif-badge" class="hidden absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">!</span>
       </button>
       <div class="hidden sm:flex items-center gap-1.5 text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
@@ -346,15 +224,15 @@
     </header>
     <main id="main-content" class="flex-1 overflow-y-auto">
       <div class="flex items-center justify-center h-full">
-        <div class="text-center text-slate-400"><div class="text-5xl mb-4">⏳</div><p class="text-sm font-medium">Carregando...</p></div>
+        <div class="text-center text-slate-400"><div class="text-5xl mb-4">⏳</div><p class="text-sm font-medium">Carregando…</p></div>
       </div>
     </main>
   </div>
 </div>
 
 <!-- MODAL GLOBAL -->
-<div id="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 modal-backdrop" onclick="UI.closeModalOnBackdrop(event)">
-  <div id="modal-box" class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[92vh] flex flex-col overflow-hidden slide-up" onclick="event.stopPropagation()">
+<div id="modal-overlay" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 modal-backdrop" onclick="UI.closeModalOnBackdrop(event)">
+  <div id="modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-title" class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[92vh] flex flex-col overflow-hidden slide-up" onclick="event.stopPropagation()">
     <div id="modal-header" class="flex items-center justify-between px-6 py-4 border-b border-slate-200 flex-shrink-0">
       <h3 id="modal-title" class="font-bold text-slate-800 text-base"></h3>
       <button onclick="UI.closeModal()" aria-label="Fechar" class="text-slate-400 hover:text-slate-700 text-xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition-colors">x</button>
@@ -366,46 +244,6 @@
 
 <!-- TOASTS -->
 <div id="toast-container" class="fixed bottom-24 right-4 z-[80] flex flex-col gap-2 pointer-events-none" aria-live="polite"></div>
-
-<!-- SELETOR DE ARQUIVO DO EDITOR (pendencias) -->
-<input type="file" id="pc-file-input" accept="image/*,.pdf,.doc,.docx,.xlsx,.xls,.csv,.txt" style="display:none" onchange="ModPendencias.attachFile(this)">
-<input type="file" id="pc-import-json" accept=".json" style="display:none" onchange="ModPendencias.importJSON(this)">
-
-<!-- LIGHTBOX -->
-<div id="lightbox" onclick="Lightbox.close()">
-  <span class="close-lb" onclick="Lightbox.close()">&times;</span>
-  <img id="lightboxImg" src="" alt="" onclick="event.stopPropagation()">
-</div>
-
-<!-- CALCULADORA -->
-<div id="calcWidget" class="calc-widget">
-  <div class="calc-header" id="calcWidgetHeader">
-    <span>🧮 Calculadora</span>
-    <button onclick="Calc.toggle()" style="background:none;border:none;color:#fff;cursor:pointer;font-size:1.2rem;line-height:1">&times;</button>
-  </div>
-  <div class="calc-display" id="calcDisplay">0</div>
-  <div class="calc-grid">
-    <button class="calc-btn cl" onclick="Calc.press('C')">C</button>
-    <button class="calc-btn op" onclick="Calc.press('(')">(</button>
-    <button class="calc-btn op" onclick="Calc.press(')')">)</button>
-    <button class="calc-btn op" onclick="Calc.press('/')">÷</button>
-    <button class="calc-btn" onclick="Calc.press('7')">7</button>
-    <button class="calc-btn" onclick="Calc.press('8')">8</button>
-    <button class="calc-btn" onclick="Calc.press('9')">9</button>
-    <button class="calc-btn op" onclick="Calc.press('*')">×</button>
-    <button class="calc-btn" onclick="Calc.press('4')">4</button>
-    <button class="calc-btn" onclick="Calc.press('5')">5</button>
-    <button class="calc-btn" onclick="Calc.press('6')">6</button>
-    <button class="calc-btn op" onclick="Calc.press('-')">−</button>
-    <button class="calc-btn" onclick="Calc.press('1')">1</button>
-    <button class="calc-btn" onclick="Calc.press('2')">2</button>
-    <button class="calc-btn" onclick="Calc.press('3')">3</button>
-    <button class="calc-btn op" onclick="Calc.press('+')">+</button>
-    <button class="calc-btn" onclick="Calc.press('0')" style="grid-column:span 2">0</button>
-    <button class="calc-btn" onclick="Calc.press('.')">.</button>
-    <button class="calc-btn eq" onclick="Calc.press('=')">=</button>
-  </div>
-</div>
 
 <script src="app.js"></script>
 </body>
