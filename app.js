@@ -1,6 +1,6 @@
 'use strict';
 // ================================================================
-// ARF - Gestão Contábil e Operacional  |  v1.2.0
+// ARF - Gestão Contábil e Operacional  |  v1.2.1
 // ================================================================
 
 // ── ESCAPE GLOBAL (todo valor vindo do usuário/banco passa por aqui) ─
@@ -213,6 +213,10 @@ const SEED_DATA={
     {id:'nf-004',project_id:'prj-003',bank_account_id:'ba-003',emitter_name:'Gráfica Impressão Rápida',emitter_cnpj:'33.444.555/0001-66',emitter_type:'simples',service_description:'Impressão de Material Educativo',fiscal_note_number:'NF-2025-198',issue_date:'2025-06-10',gross_amount:2200,iss_rate:2,iss_withheld:44,irrf_rate:0,irrf_withheld:0,pis_rate:0,pis_withheld:0,cofins_rate:0,cofins_withheld:0,csll_rate:0,csll_withheld:0,inss_rate:0,inss_withheld:0,competency_period:'2025-06-01',due_date:'2025-06-25',tx_id:'ARF9A8B7C6D5E4F3A2B1C9D8E7F6A5B4C3D',pix_payload:null,status:'pago_conciliado',paid_amount:2156,paid_at:'2025-06-26T11:30:00Z',created_by:'usr-001',created_at:'2025-06-10T08:00:00Z'},
     {id:'nf-005',project_id:'prj-002',bank_account_id:'ba-002',emitter_name:'Construtora Alves Eireli',emitter_cnpj:'55.666.777/0001-88',emitter_type:'lucro_real',service_description:'Reforma de Sede – Obra Civil',fiscal_note_number:'NF-2025-087',issue_date:'2025-07-08',gross_amount:28000,iss_rate:5,iss_withheld:1400,irrf_rate:1.5,irrf_withheld:420,pis_rate:0.65,pis_withheld:182,cofins_rate:3,cofins_withheld:840,csll_rate:1,csll_withheld:280,inss_rate:0,inss_withheld:0,competency_period:'2025-07-01',due_date:'2025-08-05',tx_id:null,pix_payload:null,status:'pendente',created_by:'usr-001',created_at:'2025-07-08T15:00:00Z'},
   ],
+  cnpj_registry:[
+    {id:'cn-001',name:'Tech Solutions Ltda',cnpj:'11222333000181',created_at:'2025-07-01T00:00:00Z'},
+    {id:'cn-002',name:'Gráfica Impressão Rápida',cnpj:'33000167000101',created_at:'2025-07-01T00:00:00Z'},
+  ],
   fixed_assets:[
     {id:'fa-001',store_id:'prj-001',code:'IMB-0001',description:'Ar-condicionado split 24.000 BTU',category:'maquinas',acquisition_date:'2024-02-10',acquisition_value:6400,residual_value:400,useful_life_months:120,supplier:'Frio Center Ltda',invoice_number:'NF-1182',status:'ativo',created_at:'2024-02-10T00:00:00Z'},
     {id:'fa-002',store_id:'prj-001',code:'IMB-0002',description:'Notebook Dell Latitude (caixa)',category:'informatica',acquisition_date:'2023-08-05',acquisition_value:4800,residual_value:0,useful_life_months:60,supplier:'Tech Solutions Ltda',invoice_number:'NF-2023-310',status:'ativo',created_at:'2023-08-05T00:00:00Z'},
@@ -237,7 +241,7 @@ const SEED_DATA={
 const S={user:{id:'demo',full_name:'Usuário Demo',role:'admin'},demoMode:true,sbClient:null,module:'dashboard',period:'',installPrompt:null};
 
 const DB={
-  KEY:'arf_db_v2',
+  KEY:'arf_db_v3',
   _data(){try{const r=localStorage.getItem(this.KEY);return r?JSON.parse(r):null;}catch{return null;}},
   _save(d){try{localStorage.setItem(this.KEY,JSON.stringify(d));}catch(e){console.error('[ARF] localStorage cheio?',e);UI.toast('Não foi possível salvar localmente.','error');}},
   init(){let d=this._data();if(!d){d=JSON.parse(JSON.stringify(SEED_DATA));this._save(d);}return d;},
@@ -976,21 +980,75 @@ const CnpjTool={
     else if(n<14)st.innerHTML=`<span class="text-slate-400">${n}/14 dígitos</span>`;
     else st.innerHTML=this.valid(el.value)?'<span class="text-emerald-600 font-semibold">✔ CNPJ válido</span>':'<span class="text-red-600 font-semibold">✖ Dígitos verificadores inválidos</span>';
   },
+  _q:'',_edit:'',
   async open(){
     if(!RBAC.can('canUseCnpj')){UI.toast('Sem permissão','error');return;}
-    const{data:stores}=await DB.get('projects');
-    const withCnpj=stores.filter(s=>s.cnpj);
-    UI.openModal({title:'🔢 CNPJ — digitar e copiar',size:'max-w-md',body:`<div class="space-y-4">
-      <div><label class="brand-label">Digite ou cole o CNPJ</label>
-        <input id="cnpj-in" inputmode="numeric" autocomplete="off" maxlength="18" placeholder="00.000.000/0000-00" class="brand-input font-mono text-lg tracking-wide" oninput="CnpjTool.onType(this)" onkeydown="if(event.key==='Enter'){CnpjTool.copy(this.value,true)}" />
-        <p id="cnpj-status" class="text-xs mt-1 h-4"></p></div>
-      <div class="grid grid-cols-2 gap-3">
-        <button onclick="CnpjTool.copy(document.getElementById('cnpj-in').value,true)" class="brand-btn bg-brand-800 text-white hover:bg-brand-700 justify-center">📋 Copiar formatado</button>
-        <button onclick="CnpjTool.copy(document.getElementById('cnpj-in').value,false)" class="brand-btn border border-slate-300 text-slate-700 hover:bg-slate-50 justify-center">📋 Só números</button>
+    this._q='';this._edit='';
+    UI.openModal({title:'🔢 CNPJ — cadastrar e copiar',size:'max-w-lg',body:`<div class="space-y-4">
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+        <p id="cnpj-form-title" class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Novo cadastro</p>
+        <input id="cnpj-name" class="brand-input" maxlength="120" placeholder="Nome (empresa / fornecedor / loja)" onkeydown="if(event.key==='Enter')document.getElementById('cnpj-in').focus()" />
+        <div class="flex gap-2"><input id="cnpj-in" inputmode="numeric" autocomplete="off" maxlength="18" placeholder="00.000.000/0000-00" class="brand-input font-mono flex-1" oninput="CnpjTool.onType(this)" onkeydown="if(event.key==='Enter')CnpjTool.save()" />
+        <button onclick="CnpjTool.save()" id="cnpj-save" class="brand-btn bg-brand-800 text-white hover:bg-brand-700">Salvar</button></div>
+        <p id="cnpj-status" class="text-xs h-4"></p>
       </div>
-      <div><p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">CNPJ das lojas cadastradas</p>
-      ${withCnpj.length===0?'<p class="text-sm text-slate-400 italic">Nenhuma loja com CNPJ. Informe o CNPJ ao cadastrar/editar a loja.</p>':`<div class="space-y-1.5 max-h-56 overflow-y-auto">${withCnpj.map(s=>`<div class="flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg"><div class="flex-1 min-w-0"><p class="text-sm font-semibold text-slate-700 truncate">${esc(s.name)}</p><p class="text-xs font-mono text-slate-500">${esc(Fmt.cnpj(s.cnpj))}</p></div><button onclick="CnpjTool.copy('${esc(s.cnpj)}',true)" class="text-xs px-2 py-1 rounded border border-slate-300 hover:bg-white" title="Copiar formatado">📋</button><button onclick="CnpjTool.copy('${esc(s.cnpj)}',false)" class="text-xs px-2 py-1 rounded border border-slate-300 hover:bg-white font-mono" title="Copiar só números">123</button></div>`).join('')}</div>`}</div>
+      <input id="cnpj-search" class="brand-input" placeholder="🔎 Buscar por nome ou CNPJ…" oninput="CnpjTool._q=this.value;CnpjTool.drawList()" />
+      <div id="cnpj-list" class="space-y-1.5 max-h-72 overflow-y-auto"></div>
     </div>`,footer:`<button onclick="UI.closeModal()" class="brand-btn border border-slate-300 text-slate-600 hover:bg-slate-50">Fechar</button>`});
+    await this.drawList();
+    document.getElementById('cnpj-name')?.focus();
+  },
+  async _all(){
+    const{data}=await DB.get('cnpj_registry');
+    const{data:stores}=await DB.get('projects');
+    // lojas com CNPJ aparecem também (somente leitura), sem duplicar
+    const have=new Set(data.map(x=>this.digits(x.cnpj)));
+    const fromStores=stores.filter(x=>x.cnpj&&!have.has(this.digits(x.cnpj))).map(x=>({id:'',name:x.name+' (loja)',cnpj:x.cnpj,_ro:true}));
+    return[...data.map(x=>({...x})).sort((a,b)=>(a.name||'').localeCompare(b.name||'','pt-BR')),...fromStores];
+  },
+  async drawList(){
+    const el=document.getElementById('cnpj-list');if(!el)return;
+    const q=this._q.trim().toLowerCase(),qd=this.digits(this._q);
+    const rows=(await this._all()).filter(r=>!q||(r.name||'').toLowerCase().includes(q)||(qd&&this.digits(r.cnpj).includes(qd)));
+    if(!rows.length){el.innerHTML='<p class="text-sm text-slate-400 italic text-center py-4">Nenhum CNPJ cadastrado. Preencha acima e clique em Salvar.</p>';return;}
+    el.innerHTML=rows.map(r=>`<div class="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg hover:border-brand-300">
+      <button class="flex-1 min-w-0 text-left" title="Clique para copiar o CNPJ" onclick="CnpjTool.copy('${esc(r.cnpj)}',true)"><p class="text-sm font-semibold text-slate-700 truncate">${esc(r.name)}</p><p class="text-xs font-mono text-slate-500">${esc(Fmt.cnpj(r.cnpj))}</p></button>
+      <button onclick="CnpjTool.copy('${esc(r.cnpj)}',true)" class="text-xs px-2 py-1 rounded border border-slate-300 hover:bg-slate-50" title="Copiar formatado">📋</button>
+      <button onclick="CnpjTool.copy('${esc(r.cnpj)}',false)" class="text-xs px-2 py-1 rounded border border-slate-300 hover:bg-slate-50 font-mono" title="Copiar só números">123</button>
+      ${r._ro?'':`<button onclick="CnpjTool.edit('${esc(r.id)}')" class="text-xs px-1.5 py-1 rounded hover:bg-slate-100" title="Editar">✏️</button><button onclick="CnpjTool.remove('${esc(r.id)}')" class="text-xs px-1.5 py-1 rounded hover:bg-red-50" title="Excluir">🗑️</button>`}
+    </div>`).join('');
+  },
+  async save(){
+    if(!RBAC.can('canUseCnpj')){UI.toast('Sem permissão','error');return;}
+    const name=document.getElementById('cnpj-name')?.value.trim();const d=this.digits(document.getElementById('cnpj-in')?.value);
+    if(!name){UI.toast('Informe o nome','warning');document.getElementById('cnpj-name')?.focus();return;}
+    if(!this.valid(d)){UI.toast('CNPJ inválido — confira os 14 dígitos','warning');return;}
+    const{data:all}=await DB.get('cnpj_registry');
+    if(all.some(x=>x.id!==this._edit&&this.digits(x.cnpj)===d)){UI.toast('Este CNPJ já está cadastrado','warning');return;}
+    try{
+      if(this._edit)await DB.update('cnpj_registry',this._edit,{name,cnpj:d});
+      else await DB.insert('cnpj_registry',{name,cnpj:d,created_by:S.demoMode?null:S.user.id});
+    }catch(e){UI.toast(e.message,'error');return;}
+    UI.toast(this._edit?'✅ Atualizado':'✅ CNPJ cadastrado','success');this._resetForm();await this.drawList();
+  },
+  _resetForm(){
+    this._edit='';['cnpj-name','cnpj-in'].forEach(i=>{const e=document.getElementById(i);if(e)e.value='';});
+    const st=document.getElementById('cnpj-status');if(st)st.innerHTML='';
+    const t=document.getElementById('cnpj-form-title');if(t)t.textContent='Novo cadastro';
+    const b=document.getElementById('cnpj-save');if(b)b.textContent='Salvar';
+    document.getElementById('cnpj-name')?.focus();
+  },
+  async edit(id){
+    const{data:r}=await DB.getById('cnpj_registry',id);if(!r)return;
+    this._edit=id;document.getElementById('cnpj-name').value=r.name;document.getElementById('cnpj-in').value=this.format(r.cnpj);
+    document.getElementById('cnpj-form-title').textContent='Editando cadastro';document.getElementById('cnpj-save').textContent='Atualizar';
+    this.onType(document.getElementById('cnpj-in'));document.getElementById('cnpj-name').focus();
+  },
+  remove(id){
+    UI.confirm('Excluir este CNPJ da lista?',async()=>{
+      try{await DB.delete('cnpj_registry',id);}catch(e){UI.toast(e.message,'error');}
+      UI.toast('Excluído','info');await this.open();
+    },{danger:true});
   }
 };
 
@@ -1272,7 +1330,7 @@ const App={
       body:`<div class="text-center space-y-3">
         <div class="w-14 h-14 bg-brand-800 rounded-xl flex items-center justify-center text-white text-xl font-black mx-auto">ARF</div>
         <p class="font-bold text-slate-800">ARF – Gestão Contábil e Operacional</p>
-        <p class="text-sm text-slate-500">v1.2.0 · ITG 2002 Compatível</p>
+        <p class="text-sm text-slate-500">v1.2.1 · ITG 2002 Compatível</p>
         <div class="bg-slate-50 rounded-xl p-4 text-left text-xs text-slate-600 space-y-1.5">
           <p>⚖️ Motor Fiscal (MEI, Simples, LP, LR, PF)</p><p>🏦 Pix EMV com TxId e QR Code</p><p>💬 Comunicação Interna Estruturada</p><p>🔐 RBAC — 5 papéis + RLS no Supabase</p><p>📱 PWA Instalável — offline-capable</p>
         </div>
@@ -1332,7 +1390,7 @@ const App={
   },
 
   async init(){
-    console.log('[ARF] Inicializando v1.2.0…');
+    console.log('[ARF] Inicializando v1.2.1…');
     this.initPWA();
     this.initPeriod();
     const session=await Auth.checkSession();
