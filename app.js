@@ -1,6 +1,6 @@
 'use strict';
 // ================================================================
-// ARF - Gestão Contábil e Operacional  |  v1.1.0
+// ARF - Gestão Contábil e Operacional  |  v1.2.0
 // ================================================================
 
 // ── ESCAPE GLOBAL (todo valor vindo do usuário/banco passa por aqui) ─
@@ -194,15 +194,15 @@ const SEED_DATA={
     {id:'demo',full_name:'Usuário Demo',role:'admin',department:'Administração',is_active:true},
   ],
   projects:[
-    {id:'prj-001',name:'Fundo Operacional Geral',code:'OP-001',type:'Livre',budget:500000,spent:47350,status:'ativo',is_favorite:false,notes:'Fundo operacional geral',start_date:'2024-01-01',created_at:'2024-01-01T00:00:00Z'},
-    {id:'prj-002',name:'Projeto Esperança – Região Norte',code:'ESPN-001',type:'Restrito',budget:150000,spent:28000,status:'ativo',is_favorite:false,notes:'Apoio assistencial ao Norte',start_date:'2024-03-01',created_at:'2024-03-01T00:00:00Z'},
-    {id:'prj-003',name:'Campanha Nativos 2024',code:'NAT-2024',type:'Restrito',budget:75000,spent:12500,status:'ativo',is_favorite:false,notes:'Apoio a comunidades indígenas',start_date:'2024-04-01',created_at:'2024-04-01T00:00:00Z'},
-    {id:'prj-004',name:'Fundo de Emergência',code:'EMERG-001',type:'Livre',budget:200000,spent:0,status:'ativo',is_favorite:false,notes:'Reserva estratégica',start_date:'2024-01-01',created_at:'2024-01-01T00:00:00Z'},
-    {id:'prj-005',name:'Alimento Solidário',code:'ALIM-001',type:'Restrito',budget:120000,spent:60000,status:'suspenso',is_favorite:false,notes:'Distribuição de cestas básicas',created_at:'2023-06-01T00:00:00Z'},
+    {id:'prj-001',name:'Loja Matriz',cnpj:'11222333000181',code:'LJ-001',type:'Livre',budget:500000,spent:47350,status:'ativo',is_favorite:false,notes:'Unidade principal',start_date:'2024-01-01',created_at:'2024-01-01T00:00:00Z'},
+    {id:'prj-002',name:'Loja Norte',cnpj:'45997418000153',code:'LJ-002',type:'Restrito',budget:150000,spent:28000,status:'ativo',is_favorite:false,notes:'Unidade da região Norte',start_date:'2024-03-01',created_at:'2024-03-01T00:00:00Z'},
+    {id:'prj-003',name:'Loja Centro',cnpj:'11444777000161',code:'LJ-003',type:'Restrito',budget:75000,spent:12500,status:'ativo',is_favorite:false,notes:'Unidade do centro da cidade',start_date:'2024-04-01',created_at:'2024-04-01T00:00:00Z'},
+    {id:'prj-004',name:'Loja Sul',cnpj:'27865757000102',code:'LJ-004',type:'Livre',budget:200000,spent:0,status:'ativo',is_favorite:false,notes:'Unidade da região Sul',start_date:'2024-01-01',created_at:'2024-01-01T00:00:00Z'},
+    {id:'prj-005',name:'Loja Outlet',cnpj:'33000167000101',code:'LJ-005',type:'Restrito',budget:120000,spent:60000,status:'suspenso',is_favorite:false,notes:'Unidade outlet (temporariamente suspensa)',created_at:'2023-06-01T00:00:00Z'},
   ],
   bank_accounts:[
     {id:'ba-001',project_id:'prj-001',bank_name:'Banco do Brasil',bank_code:'001',agency:'1234-5',account_number:'00012345',account_digit:'6',pix_key:'12.345.678/0001-90',pix_key_type:'cnpj',beneficiary_name:'Associação Exemplo',is_active:true,created_at:'2024-01-01T00:00:00Z'},
-    {id:'ba-002',project_id:'prj-002',bank_name:'Caixa Econômica Federal',bank_code:'104',agency:'0567',account_number:'00567890',account_digit:'1',pix_key:'contato.norte@exemplo.com.br',pix_key_type:'email',beneficiary_name:'Projeto Esperança',is_active:true,created_at:'2024-03-01T00:00:00Z'},
+    {id:'ba-002',project_id:'prj-002',bank_name:'Caixa Econômica Federal',bank_code:'104',agency:'0567',account_number:'00567890',account_digit:'1',pix_key:'contato.norte@exemplo.com.br',pix_key_type:'email',beneficiary_name:'Loja Norte Ltda',is_active:true,created_at:'2024-03-01T00:00:00Z'},
     {id:'ba-003',project_id:'prj-003',bank_name:'Bradesco',bank_code:'237',agency:'3456-7',account_number:'12345678',account_digit:'9',pix_key:'+5561999990001',pix_key_type:'telefone',beneficiary_name:'Campanha Nativos 2024',is_active:true,created_at:'2024-04-01T00:00:00Z'},
     {id:'ba-004',project_id:'prj-004',bank_name:'Itaú Unibanco',bank_code:'341',agency:'5678',account_number:'98765432',account_digit:'0',pix_key:'a1b2c3d4-e5f6-7890-abcd-ef1234567890',pix_key_type:'aleatoria',beneficiary_name:'Fundo de Emergência',is_active:true,created_at:'2024-01-01T00:00:00Z'},
   ],
@@ -213,13 +213,20 @@ const SEED_DATA={
     {id:'nf-004',project_id:'prj-003',bank_account_id:'ba-003',emitter_name:'Gráfica Impressão Rápida',emitter_cnpj:'33.444.555/0001-66',emitter_type:'simples',service_description:'Impressão de Material Educativo',fiscal_note_number:'NF-2025-198',issue_date:'2025-06-10',gross_amount:2200,iss_rate:2,iss_withheld:44,irrf_rate:0,irrf_withheld:0,pis_rate:0,pis_withheld:0,cofins_rate:0,cofins_withheld:0,csll_rate:0,csll_withheld:0,inss_rate:0,inss_withheld:0,competency_period:'2025-06-01',due_date:'2025-06-25',tx_id:'ARF9A8B7C6D5E4F3A2B1C9D8E7F6A5B4C3D',pix_payload:null,status:'pago_conciliado',paid_amount:2156,paid_at:'2025-06-26T11:30:00Z',created_by:'usr-001',created_at:'2025-06-10T08:00:00Z'},
     {id:'nf-005',project_id:'prj-002',bank_account_id:'ba-002',emitter_name:'Construtora Alves Eireli',emitter_cnpj:'55.666.777/0001-88',emitter_type:'lucro_real',service_description:'Reforma de Sede – Obra Civil',fiscal_note_number:'NF-2025-087',issue_date:'2025-07-08',gross_amount:28000,iss_rate:5,iss_withheld:1400,irrf_rate:1.5,irrf_withheld:420,pis_rate:0.65,pis_withheld:182,cofins_rate:3,cofins_withheld:840,csll_rate:1,csll_withheld:280,inss_rate:0,inss_withheld:0,competency_period:'2025-07-01',due_date:'2025-08-05',tx_id:null,pix_payload:null,status:'pendente',created_by:'usr-001',created_at:'2025-07-08T15:00:00Z'},
   ],
+  fixed_assets:[
+    {id:'fa-001',store_id:'prj-001',code:'IMB-0001',description:'Ar-condicionado split 24.000 BTU',category:'maquinas',acquisition_date:'2024-02-10',acquisition_value:6400,residual_value:400,useful_life_months:120,supplier:'Frio Center Ltda',invoice_number:'NF-1182',status:'ativo',created_at:'2024-02-10T00:00:00Z'},
+    {id:'fa-002',store_id:'prj-001',code:'IMB-0002',description:'Notebook Dell Latitude (caixa)',category:'informatica',acquisition_date:'2023-08-05',acquisition_value:4800,residual_value:0,useful_life_months:60,supplier:'Tech Solutions Ltda',invoice_number:'NF-2023-310',status:'ativo',created_at:'2023-08-05T00:00:00Z'},
+    {id:'fa-003',store_id:'prj-002',code:'IMB-0003',description:'Furgão utilitário Fiat Fiorino',category:'veiculos',acquisition_date:'2022-11-20',acquisition_value:78000,residual_value:15000,useful_life_months:60,supplier:'Concessionária Norte',invoice_number:'NF-9921',status:'ativo',created_at:'2022-11-20T00:00:00Z'},
+    {id:'fa-004',store_id:'prj-003',code:'IMB-0004',description:'Gôndolas e prateleiras (lote)',category:'moveis',acquisition_date:'2021-03-01',acquisition_value:12500,residual_value:0,useful_life_months:120,supplier:'Móveis Comerciais SA',invoice_number:'NF-455',status:'baixado',disposal_date:'2025-05-30',disposal_reason:'Venda – substituição do layout',created_at:'2021-03-01T00:00:00Z'},
+    {id:'fa-005',store_id:'prj-004',code:'IMB-0005',description:'Terreno – ampliação Loja Sul',category:'terrenos',acquisition_date:'2024-09-15',acquisition_value:210000,residual_value:0,useful_life_months:0,supplier:'Imobiliária Sul',invoice_number:'ESC-77',status:'ativo',created_at:'2024-09-15T00:00:00Z'},
+  ],
   internal_pendencies:[
     {id:'pend-001',sender_id:'usr-002',recipient_id:'usr-001',project_id:'prj-001',note_fiscal_id:'nf-003',accounting_period:'2025-07-01',subject:'Falta comprovante de serviço – RPA Maria Santos',status:'aberta',priority:'alta',created_at:'2025-07-06T08:00:00Z',messages:[
       {id:'msg-001',sender_id:'usr-002',content_text:'Ana, preciso do contrato de prestação de serviço da Maria Santos para fechar o mês de julho. Por favor, envie até sexta-feira.',created_at:'2025-07-06T08:01:00Z'},
       {id:'msg-002',sender_id:'usr-001',content_text:'Marcos, estou solicitando à Maria. Ela deverá enviar hoje à tarde.',created_at:'2025-07-06T10:15:00Z'}
     ]},
-    {id:'pend-002',sender_id:'usr-001',recipient_id:'usr-002',project_id:'prj-002',accounting_period:'2025-07-01',subject:'Aprovação do balancete parcial – Projeto Esperança Julho',status:'em_analise',priority:'normal',created_at:'2025-07-08T14:00:00Z',messages:[
-      {id:'msg-003',sender_id:'usr-001',content_text:'Marcos, por favor verifique os lançamentos do Projeto Esperança e aprove o balancete parcial. Precisamos até dia 15.',created_at:'2025-07-08T14:01:00Z'}
+    {id:'pend-002',sender_id:'usr-001',recipient_id:'usr-002',project_id:'prj-002',accounting_period:'2025-07-01',subject:'Aprovação do balancete parcial – Loja Norte Julho',status:'em_analise',priority:'normal',created_at:'2025-07-08T14:00:00Z',messages:[
+      {id:'msg-003',sender_id:'usr-001',content_text:'Marcos, por favor verifique os lançamentos da Loja Norte e aprove o balancete parcial. Precisamos até dia 15.',created_at:'2025-07-08T14:01:00Z'}
     ]},
     {id:'pend-003',sender_id:'usr-003',recipient_id:'usr-002',project_id:'prj-001',note_fiscal_id:'nf-003',accounting_period:'2025-07-01',subject:'INSS retido – RPA nutricionista (urgente SEFIP)',status:'aberta',priority:'urgente',created_at:'2025-07-09T07:30:00Z',messages:[
       {id:'msg-004',sender_id:'usr-003',content_text:'Marcos, precisamos confirmar a retenção do INSS da Maria Santos para lançar na SEFIP de julho. O prazo é amanhã!',created_at:'2025-07-09T07:31:00Z'}
@@ -230,7 +237,7 @@ const SEED_DATA={
 const S={user:{id:'demo',full_name:'Usuário Demo',role:'admin'},demoMode:true,sbClient:null,module:'dashboard',period:'',installPrompt:null};
 
 const DB={
-  KEY:'arf_db_v1',
+  KEY:'arf_db_v2',
   _data(){try{const r=localStorage.getItem(this.KEY);return r?JSON.parse(r):null;}catch{return null;}},
   _save(d){try{localStorage.setItem(this.KEY,JSON.stringify(d));}catch(e){console.error('[ARF] localStorage cheio?',e);UI.toast('Não foi possível salvar localmente.','error');}},
   init(){let d=this._data();if(!d){d=JSON.parse(JSON.stringify(SEED_DATA));this._save(d);}return d;},
@@ -275,12 +282,12 @@ const DB={
 
 const RBAC={
   rules:{
-    admin:{canApprove:true,canCreateNote:true,canManageUsers:true,canViewReports:true,canManageBanks:true,canSendPend:true},
-    tesoureiro:{canApprove:true,canCreateNote:true,canManageUsers:false,canViewReports:true,canManageBanks:true,canSendPend:true},
-    contador:{canApprove:false,canCreateNote:true,canManageUsers:false,canViewReports:true,canManageBanks:false,canSendPend:true},
-    dp:{canApprove:false,canCreateNote:false,canManageUsers:false,canViewReports:true,canManageBanks:false,canSendPend:true},
-    caixa:{canApprove:false,canCreateNote:true,canManageUsers:false,canViewReports:false,canManageBanks:false,canSendPend:false},
-    demo:{canApprove:true,canCreateNote:true,canManageUsers:true,canViewReports:true,canManageBanks:true,canSendPend:true},
+    admin:{canApprove:true,canCreateNote:true,canManageUsers:true,canViewReports:true,canManageBanks:true,canSendPend:true,canManageAssets:true,canUseCnpj:true,canDelete:true},
+    tesoureiro:{canApprove:true,canCreateNote:true,canManageUsers:false,canViewReports:true,canManageBanks:true,canSendPend:true,canManageAssets:true,canUseCnpj:false,canDelete:false},
+    contador:{canApprove:false,canCreateNote:true,canManageUsers:false,canViewReports:true,canManageBanks:false,canSendPend:true,canManageAssets:true,canUseCnpj:true,canDelete:false},
+    dp:{canApprove:false,canCreateNote:false,canManageUsers:false,canViewReports:true,canManageBanks:false,canSendPend:true,canManageAssets:false,canUseCnpj:false,canDelete:false},
+    caixa:{canApprove:false,canCreateNote:true,canManageUsers:false,canViewReports:false,canManageBanks:false,canSendPend:false,canManageAssets:false,canUseCnpj:false,canDelete:false},
+    demo:{canApprove:true,canCreateNote:true,canManageUsers:true,canViewReports:true,canManageBanks:true,canSendPend:true,canManageAssets:true,canUseCnpj:true,canDelete:true},
   },
   can(p){return !!(this.rules[S.user?.role]?.[p]);}
 };
@@ -394,7 +401,7 @@ const ModDashboard={
   ${RBAC.can('canCreateNote')?`<button onclick="ModNotasFiscais.openNew()" class="brand-btn bg-brand-800 text-white hover:bg-brand-700 shadow-sm">+ Nova Nota Fiscal</button>`:''}
 </div>
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-  <div class="kpi-card kpi-blue"><p class="text-xs text-slate-500 font-semibold uppercase tracking-wide">Projetos Ativos</p><p class="text-3xl font-black text-brand-800 mt-1">${actProj}</p><p class="text-xs text-slate-400 mt-1">de ${projects.length} total</p></div>
+  <div class="kpi-card kpi-blue"><p class="text-xs text-slate-500 font-semibold uppercase tracking-wide">Lojas Ativas</p><p class="text-3xl font-black text-brand-800 mt-1">${actProj}</p><p class="text-xs text-slate-400 mt-1">de ${projects.length} total</p></div>
   <div class="kpi-card kpi-amber"><p class="text-xs text-slate-500 font-semibold uppercase tracking-wide">NF Pendentes</p><p class="text-3xl font-black text-amber-600 mt-1">${nfPend}</p><p class="text-xs text-slate-400 mt-1">${nfAprov} aguard. Pix</p></div>
   <div class="kpi-card kpi-red"><p class="text-xs text-slate-500 font-semibold uppercase tracking-wide">Pendências Abertas</p><p class="text-3xl font-black text-red-600 mt-1">${pendAb}</p><p class="text-xs text-slate-400 mt-1">do período</p></div>
   <div class="kpi-card kpi-green"><p class="text-xs text-slate-500 font-semibold uppercase tracking-wide">A Pagar – ${Fmt.period(p)}</p><p class="text-2xl font-black text-emerald-700 mt-1">${Fmt.money(totLiq)}</p><p class="text-xs text-slate-400 mt-1">líquido após retenções</p></div>
@@ -405,7 +412,7 @@ const ModDashboard={
 </div>
 <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
   <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100"><h2 class="font-bold text-slate-700 text-sm">Últimas Notas Fiscais</h2><a href="#" onclick="App.navigate('notas-fiscais');return false;" class="text-xs text-blue-600 hover:underline">Ver todas →</a></div>
-  ${recent.length===0?UI.empty('Nenhuma nota lançada','🧾'):`<div class="overflow-x-auto"><table class="brand-table"><thead><tr><th>Emitente</th><th>Projeto</th><th class="text-right">Bruto</th><th class="text-right">Líquido</th><th>Status</th></tr></thead><tbody>
+  ${recent.length===0?UI.empty('Nenhuma nota lançada','🧾'):`<div class="overflow-x-auto"><table class="brand-table"><thead><tr><th>Emitente</th><th>Loja</th><th class="text-right">Bruto</th><th class="text-right">Líquido</th><th>Status</th></tr></thead><tbody>
   ${recent.map(n=>{const pr=projects.find(x=>x.id===n.project_id);return`<tr class="cursor-pointer" onclick="ModNotasFiscais.openDetail('${n.id}')"><td><p class="font-medium text-sm">${esc(n.emitter_name)}</p><p class="text-xs text-slate-400">${esc(n.fiscal_note_number||'–')}</p></td><td class="text-xs text-slate-500">${esc(pr?.name||'–')}</td><td class="text-right font-mono text-sm">${Fmt.money(n.gross_amount)}</td><td class="text-right font-mono text-sm font-bold text-emerald-700">${Fmt.money(n.net_amount)}</td><td>${UI.badge(n.status)}</td></tr>`;}).join('')}
   </tbody></table></div>`}
 </div>
@@ -421,7 +428,7 @@ const ModDashboard={
 const ModProjetos={
   async render(){
     const{data:projects}=await DB.get('projects');const{data:notes}=await DB.get('notes_fiscal');const{data:banks}=await DB.get('bank_accounts');
-    UI.render(`<div class="p-6 fade-in"><div class="flex items-center justify-between mb-5 flex-wrap gap-3"><div><h1 class="text-xl font-bold text-slate-800">Projetos</h1><p class="text-sm text-slate-500 mt-0.5">${projects.length} projeto(s)</p></div>${RBAC.can('canCreateNote')?`<button onclick="ModProjetos.openNew()" class="brand-btn bg-brand-800 text-white hover:bg-brand-700 shadow-sm">+ Novo Projeto</button>`:''}</div>
+    UI.render(`<div class="p-6 fade-in"><div class="flex items-center justify-between mb-5 flex-wrap gap-3"><div><h1 class="text-xl font-bold text-slate-800">Lojas</h1><p class="text-sm text-slate-500 mt-0.5">${projects.length} loja(s)</p></div>${RBAC.can('canCreateNote')?`<button onclick="ModProjetos.openNew()" class="brand-btn bg-brand-800 text-white hover:bg-brand-700 shadow-sm">+ Nova Loja</button>`:''}</div>
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">${projects.map(p=>this.cardHtml(p,notes,banks)).join('')}</div></div>`);
   },
   cardHtml(p,allN,allB){
@@ -436,10 +443,11 @@ const ModProjetos={
   },
   async toggleFav(id,val){await DB.update('projects',id,{is_favorite:val});App.updateFavoritesList();await this.render();UI.toast(val?'⭐ Favorito adicionado':'Favorito removido',val?'success':'info');},
   async openNew(){
-    UI.openModal({title:'+ Novo Projeto',size:'max-w-lg',body:`<div class="space-y-4">
-      <div><label class="brand-label">Nome *</label><input id="prj-name" class="brand-input" placeholder="Ex: Projeto Esperança – Norte" /></div>
+    UI.openModal({title:'+ Nova Loja',size:'max-w-lg',body:`<div class="space-y-4">
+      <div><label class="brand-label">Nome *</label><input id="prj-name" class="brand-input" placeholder="Ex: Loja Shopping Norte" /></div>
       <div class="grid grid-cols-2 gap-4">
-        <div><label class="brand-label">Código</label><input id="prj-code" class="brand-input" placeholder="ESPN-001" /></div>
+        <div class="col-span-2"><label class="brand-label">CNPJ da loja</label><input id="prj-cnpj" inputmode="numeric" maxlength="18" class="brand-input font-mono" placeholder="00.000.000/0000-00" oninput="CnpjTool.maskInput(this)" /></div>
+        <div><label class="brand-label">Código</label><input id="prj-code" class="brand-input" placeholder="LJ-001" /></div>
         <div><label class="brand-label">Tipo *</label><select id="prj-type" class="brand-input"><option value="Livre">Livre</option><option value="Restrito">Restrito</option></select></div>
         <div><label class="brand-label">Orçamento (R$) *</label><input id="prj-budget" type="number" class="brand-input" min="0" step="0.01" /></div>
         <div><label class="brand-label">Status</label><select id="prj-status" class="brand-input"><option value="ativo">Ativo</option><option value="suspenso">Suspenso</option><option value="encerrado">Encerrado</option></select></div>
@@ -451,8 +459,10 @@ const ModProjetos={
   async saveNew(){
     const name=document.getElementById('prj-name')?.value.trim();const budget=parseFloat(document.getElementById('prj-budget')?.value||0);
     if(!name){UI.toast('Informe o nome','warning');return;}if(!budget||budget<=0){UI.toast('Informe um orçamento válido','warning');return;}
-    await DB.insert('projects',{name,code:document.getElementById('prj-code')?.value.trim(),type:document.getElementById('prj-type')?.value,budget,spent:0,status:document.getElementById('prj-status')?.value,start_date:document.getElementById('prj-start')?.value||null,end_date:document.getElementById('prj-end')?.value||null,notes:document.getElementById('prj-notes')?.value.trim(),is_favorite:false});
-    UI.closeModal();UI.toast('✅ Projeto criado!','success');await this.render();App.updateFavoritesList();
+    const cnpjIn=CnpjTool.digits(document.getElementById('prj-cnpj')?.value);
+    if(cnpjIn&&!CnpjTool.valid(cnpjIn)){UI.toast('CNPJ inválido (verifique os dígitos)','warning');return;}
+    await DB.insert('projects',{name,cnpj:cnpjIn||null,code:document.getElementById('prj-code')?.value.trim(),type:document.getElementById('prj-type')?.value,budget,spent:0,status:document.getElementById('prj-status')?.value,start_date:document.getElementById('prj-start')?.value||null,end_date:document.getElementById('prj-end')?.value||null,notes:document.getElementById('prj-notes')?.value.trim(),is_favorite:false});
+    UI.closeModal();UI.toast('✅ Loja criada!','success');await this.render();App.updateFavoritesList();
   },
   async openEdit(id){
     if(!RBAC.can('canApprove')){UI.toast('Sem permissão','error');return;}
@@ -461,6 +471,7 @@ const ModProjetos={
     UI.openModal({title:`Editar — ${p.name}`,size:'max-w-lg',body:`<div class="space-y-4">
       <div><label class="brand-label">Nome *</label><input id="pe-name" class="brand-input" value="${esc(p.name)}" /></div>
       <div class="grid grid-cols-2 gap-4">
+        <div class="col-span-2"><label class="brand-label">CNPJ da loja</label><input id="pe-cnpj" inputmode="numeric" maxlength="18" class="brand-input font-mono" value="${esc(Fmt.cnpj(p.cnpj||'')==='–'?'':Fmt.cnpj(p.cnpj))}" oninput="CnpjTool.maskInput(this)" /></div>
         <div><label class="brand-label">Código</label><input id="pe-code" class="brand-input" value="${esc(p.code||'')}" /></div>
         <div><label class="brand-label">Tipo</label><select id="pe-type" class="brand-input">${opt('Livre','Livre',p.type)}${opt('Restrito','Restrito',p.type)}</select></div>
         <div><label class="brand-label">Orçamento (R$) *</label><input id="pe-budget" type="number" min="0" step="0.01" class="brand-input" value="${esc(p.budget)}" /></div>
@@ -475,9 +486,31 @@ const ModProjetos={
     const g=x=>document.getElementById(x)?.value.trim();const budget=parseFloat(g('pe-budget'));
     if(!g('pe-name')){UI.toast('Informe o nome','warning');return;}
     if(isNaN(budget)||budget<=0){UI.toast('Orçamento inválido','warning');return;}
-    await DB.update('projects',id,{name:g('pe-name'),code:g('pe-code')||null,type:g('pe-type'),budget,spent:parseFloat(g('pe-spent'))||0,status:g('pe-status'),start_date:g('pe-start')||null,end_date:g('pe-end')||null,notes:g('pe-notes')||null});
-    UI.closeModal();UI.toast('✅ Projeto atualizado','success');App.updateFavoritesList();
+    const cnpjE=CnpjTool.digits(g('pe-cnpj'));
+    if(cnpjE&&!CnpjTool.valid(cnpjE)){UI.toast('CNPJ inválido (verifique os dígitos)','warning');return;}
+    await DB.update('projects',id,{name:g('pe-name'),cnpj:cnpjE||null,code:g('pe-code')||null,type:g('pe-type'),budget,spent:parseFloat(g('pe-spent'))||0,status:g('pe-status'),start_date:g('pe-start')||null,end_date:g('pe-end')||null,notes:g('pe-notes')||null});
+    UI.closeModal();UI.toast('✅ Loja atualizada','success');App.updateFavoritesList();
     if(S.module==='projetos'||S.module==='relatorio-projetos')await this.render();
+  },
+  async remove(id){
+    if(!RBAC.can('canDelete')){UI.toast('Somente o administrador pode excluir lojas','error');return;}
+    const{data:p}=await DB.getById('projects',id);if(!p)return;
+    const{data:notes}=await DB.get('notes_fiscal');const{data:assets}=await DB.get('fixed_assets');const{data:banks}=await DB.get('bank_accounts');
+    const nn=notes.filter(n=>n.project_id===id).length,na=assets.filter(a=>a.store_id===id).length,nb=banks.filter(b=>b.project_id===id).length;
+    if(nn>0||na>0){UI.toast(`Não é possível excluir “${p.name}”: possui ${nn} nota(s) fiscal(is) e ${na} bem(ns) do imobilizado. Mova/remova-os ou altere o status para Encerrado.`,'warning',7000);return;}
+    UI.confirm(`Excluir a loja “${p.name}”${nb?` e suas ${nb} conta(s) bancária(s)`:''}? Esta ação não pode ser desfeita.`,async()=>{
+      try{
+        if(S.demoMode){
+          const d=DB._data()||DB.init();
+          d.bank_accounts=(d.bank_accounts||[]).filter(b=>b.project_id!==id);
+          d.internal_pendencies=(d.internal_pendencies||[]).map(x=>x.project_id===id?{...x,project_id:null}:x);
+          DB._save(d);
+        }
+        await DB.delete('projects',id);
+        UI.toast('🗑️ Loja excluída','info');App.updateFavoritesList();App.updateBadges();
+        if(S.module==='projetos'||S.module==='relatorio-projetos')await this.render();
+      }catch(e){UI.toast(e.message,'error');}
+    },{danger:true});
   },
   async openDetail(id){
     const{data:p}=await DB.getById('projects',id);if(!p)return;
@@ -486,11 +519,12 @@ const ModProjetos={
     const pct=p.budget>0?Math.min(100,round2((p.spent/p.budget)*100)):0;
     UI.openModal({title:p.name,size:'max-w-2xl',body:`<div class="space-y-5">
       <div class="grid grid-cols-3 gap-3"><div class="bg-blue-50 rounded-xl p-4"><p class="text-xs text-slate-500 mb-1">Orçamento</p><p class="font-bold text-brand-800">${Fmt.money(p.budget)}</p></div><div class="bg-amber-50 rounded-xl p-4"><p class="text-xs text-slate-500 mb-1">Gasto</p><p class="font-bold text-amber-700">${Fmt.money(p.spent)}</p></div><div class="bg-emerald-50 rounded-xl p-4"><p class="text-xs text-slate-500 mb-1">Saldo</p><p class="font-bold text-emerald-700">${Fmt.money(p.budget-p.spent)}</p></div></div>
+      ${p.cnpj?`<div class="flex items-center gap-2 text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2"><span class="text-slate-500">CNPJ</span><span class="font-mono font-semibold text-slate-700">${esc(Fmt.cnpj(p.cnpj))}</span><button onclick="CnpjTool.copy('${esc(p.cnpj)}',true)" class="ml-auto text-xs px-2 py-1 rounded border border-slate-300 hover:bg-white">📋 Copiar</button></div>`:''}
       <div class="h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full rounded-full ${pct>90?'bg-red-500':pct>70?'bg-amber-500':'bg-emerald-500'}" style="width:${pct}%"></div></div>
       <div><p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Contas Bancárias (${pb.length})</p>${pb.length===0?`<p class="text-sm text-slate-400 italic">Sem contas.</p>`:pb.map(b=>`<div class="flex items-center gap-3 px-3 py-2.5 bg-slate-50 rounded-lg mb-2 border border-slate-200"><span class="text-lg">🏛️</span><div class="flex-1 min-w-0"><p class="text-sm font-semibold">${esc(b.bank_name)} — Ag. ${esc(b.agency)} · C/C ${esc(b.account_number)}</p><p class="text-xs text-slate-400 font-mono">Pix: ${esc(b.pix_key)}</p></div></div>`).join('')}</div>
       <div><p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Notas Fiscais (${pn.length})</p>${pn.length===0?`<p class="text-sm text-slate-400 italic">Nenhuma.</p>`:`<table class="brand-table"><thead><tr><th>Emitente</th><th class="text-right">Líquido</th><th>Status</th></tr></thead><tbody>${pn.slice(0,6).map(n=>`<tr><td class="text-sm">${esc(n.emitter_name)}</td><td class="text-right font-mono text-emerald-700">${Fmt.money(n.net_amount)}</td><td>${UI.badge(n.status)}</td></tr>`).join('')}</tbody></table>`}</div>
       ${p.notes?`<div class="bg-slate-50 rounded-lg p-3 border"><p class="text-xs font-semibold text-slate-500 mb-1">Obs.</p><p class="text-sm text-slate-600">${esc(p.notes)}</p></div>`:''}
-    </div>`,footer:`${RBAC.can('canApprove')?`<button onclick="ModProjetos.openEdit('${id}')" class="brand-btn border border-slate-300 text-slate-600 hover:bg-slate-50">✏️ Editar</button>`:''}${RBAC.can('canManageBanks')?`<button onclick="ModContasBancarias.openNew('${id}');UI.closeModal()" class="brand-btn border border-slate-300 text-slate-600 hover:bg-slate-50 mr-auto">+ Conta Bancária</button>`:''}<button onclick="UI.closeModal()" class="brand-btn border border-slate-300 text-slate-600 hover:bg-slate-50">Fechar</button>${RBAC.can('canCreateNote')?`<button onclick="ModNotasFiscais.openNew('${id}');UI.closeModal()" class="brand-btn bg-brand-800 text-white hover:bg-brand-700">+ Nova NF</button>`:''}`});
+    </div>`,footer:`${RBAC.can('canDelete')?`<button onclick="ModProjetos.remove('${esc(id)}')" class="brand-btn border border-red-300 text-red-600 hover:bg-red-50">🗑️ Excluir</button>`:''}${RBAC.can('canApprove')?`<button onclick="ModProjetos.openEdit('${id}')" class="brand-btn border border-slate-300 text-slate-600 hover:bg-slate-50">✏️ Editar</button>`:''}${RBAC.can('canManageBanks')?`<button onclick="ModContasBancarias.openNew('${id}');UI.closeModal()" class="brand-btn border border-slate-300 text-slate-600 hover:bg-slate-50 mr-auto">+ Conta Bancária</button>`:''}<button onclick="UI.closeModal()" class="brand-btn border border-slate-300 text-slate-600 hover:bg-slate-50">Fechar</button>${RBAC.can('canCreateNote')?`<button onclick="ModNotasFiscais.openNew('${id}');UI.closeModal()" class="brand-btn bg-brand-800 text-white hover:bg-brand-700">+ Nova NF</button>`:''}`});
   }
 };
 
@@ -505,7 +539,7 @@ const ModContasBancarias={
   async openNew(preProj=''){
     const{data:projects}=await DB.get('projects');
     UI.openModal({title:'+ Nova Conta Bancária',size:'max-w-lg',body:`<div class="space-y-4">
-      <div><label class="brand-label">Projeto *</label><select id="ba-proj" class="brand-input"><option value="">Selecione…</option>${projects.filter(p=>p.status==='ativo').map(p=>`<option value="${p.id}" ${p.id===preProj?'selected':''}>${esc(p.name)}</option>`).join('')}</select></div>
+      <div><label class="brand-label">Loja *</label><select id="ba-proj" class="brand-input"><option value="">Selecione…</option>${projects.filter(p=>p.status==='ativo').map(p=>`<option value="${p.id}" ${p.id===preProj?'selected':''}>${esc(p.name)}</option>`).join('')}</select></div>
       <div class="grid grid-cols-2 gap-4"><div><label class="brand-label">Banco *</label><input id="ba-bank" class="brand-input" /></div><div><label class="brand-label">Cód. BACEN</label><input id="ba-code" class="brand-input" placeholder="001" /></div><div><label class="brand-label">Agência *</label><input id="ba-agency" class="brand-input" /></div><div><label class="brand-label">Conta *</label><input id="ba-account" class="brand-input" placeholder="00012345-6" /></div>
       <div class="col-span-2"><label class="brand-label">Beneficiário *</label><input id="ba-benef" class="brand-input" /></div>
       <div><label class="brand-label">Tipo Pix *</label><select id="ba-pixtype" class="brand-input">${Object.entries(PIX_KEY_LABELS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></div>
@@ -547,7 +581,7 @@ const ModNotasFiscais={
     const fil=notes.filter(n=>!S.period||n.competency_period?.startsWith(S.period)).map(n=>DB.computeNote(n)).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
     UI.render(`<div class="p-6 fade-in"><div class="flex items-center justify-between mb-5 flex-wrap gap-3"><div><h1 class="text-xl font-bold text-slate-800">Notas Fiscais</h1><p class="text-sm text-slate-500">${fil.length} nota(s) — ${Fmt.period(S.period)}</p></div>${RBAC.can('canCreateNote')?`<button onclick="ModNotasFiscais.openNew()" class="brand-btn bg-brand-800 text-white hover:bg-brand-700 shadow-sm">+ Nova Nota Fiscal</button>`:''}</div>
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">${[['Bruto',fil.reduce((a,n)=>a+n.gross_amount,0),'text-slate-700'],['Retido',fil.reduce((a,n)=>a+n.tax_withheld,0),'text-red-600'],['Líquido',fil.reduce((a,n)=>a+n.net_amount,0),'text-emerald-700'],['Pend. Pag.',fil.filter(n=>n.status==='pix_gerado'||n.status==='aprovada').reduce((a,n)=>a+n.net_amount,0),'text-amber-600']].map(([l,v,c])=>`<div class="bg-white rounded-lg border border-slate-200 px-4 py-3"><p class="text-xs text-slate-500 uppercase tracking-wide font-semibold">${l}</p><p class="font-bold ${c} mt-1 text-lg">${Fmt.money(v)}</p></div>`).join('')}</div>
-    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">${fil.length===0?UI.empty('Nenhuma nota no período','🧾'):`<div class="overflow-x-auto"><table class="brand-table"><thead><tr><th>NF / Emitente</th><th>Regime</th><th>Projeto</th><th class="text-right">Bruto</th><th class="text-right">Retido</th><th class="text-right">Líquido</th><th>Status</th><th class="text-center">Ações</th></tr></thead><tbody>
+    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">${fil.length===0?UI.empty('Nenhuma nota no período','🧾'):`<div class="overflow-x-auto"><table class="brand-table"><thead><tr><th>NF / Emitente</th><th>Regime</th><th>Loja</th><th class="text-right">Bruto</th><th class="text-right">Retido</th><th class="text-right">Líquido</th><th>Status</th><th class="text-center">Ações</th></tr></thead><tbody>
     ${fil.map(n=>{const pr=projects.find(x=>x.id===n.project_id);return`<tr><td><p class="font-semibold text-slate-800 text-sm">${esc(n.emitter_name)}</p><p class="text-xs text-slate-400">${esc(n.fiscal_note_number||'–')} · ${Fmt.date(n.issue_date)}</p></td><td><span class="text-xs bg-slate-100 px-2 py-0.5 rounded font-medium text-slate-600">${EMITTER_LABELS[n.emitter_type]||n.emitter_type}</span></td><td class="text-xs text-slate-500 max-w-[120px] truncate">${esc(pr?.name||'–')}</td><td class="text-right font-mono text-sm">${Fmt.money(n.gross_amount)}</td><td class="text-right font-mono text-sm text-red-600">–${Fmt.money(n.tax_withheld)}</td><td class="text-right font-mono text-sm font-bold text-emerald-700">${Fmt.money(n.net_amount)}</td><td>${UI.badge(n.status)}</td><td class="text-center"><div class="flex items-center justify-center gap-1"><button onclick="ModNotasFiscais.openDetail('${n.id}')" class="text-xs px-2 py-1 rounded text-slate-600 hover:bg-slate-100" title="Detalhes">👁️</button>${n.status==='pendente'&&RBAC.can('canApprove')?`<button onclick="ModNotasFiscais.approve('${n.id}')" class="text-xs px-2 py-1 rounded text-emerald-700 hover:bg-emerald-50" title="Aprovar">✅</button>`:''}${n.status==='aprovada'&&RBAC.can('canApprove')?`<button onclick="ModNotasFiscais.generatePix('${n.id}')" class="text-xs px-2 py-1 rounded text-blue-700 hover:bg-blue-50" title="Gerar Pix">🏦</button>`:''}${n.status==='pix_gerado'?`<button onclick="ModNotasFiscais.openPixModal('${n.id}')" class="text-xs px-2 py-1 rounded text-indigo-700 hover:bg-indigo-50" title="Ver Pix">📱</button>`:''}</div></td></tr>`;}).join('')}
     </tbody></table></div>`}</div></div>`);
   },
@@ -565,7 +599,7 @@ const ModNotasFiscais={
       <div class="grid grid-cols-2 gap-4"><div><label class="brand-label">Valor Bruto (R$) *</label><input id="nf-gross" type="number" class="brand-input" min="0.01" step="0.01" oninput="ModNotasFiscais.previewTax()" /></div><div><label class="brand-label">Vencimento</label><input id="nf-due" type="date" class="brand-input" /></div></div>
       <div id="tax-preview" class="mt-2"></div></div>
       <div><p class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3 pb-2 border-b">Vinculação</p>
-      <div class="grid grid-cols-2 gap-4"><div><label class="brand-label">Projeto *</label><select id="nf-project" class="brand-input" onchange="ModNotasFiscais.loadBanks()"><option value="">Selecione…</option>${projects.filter(p=>p.status==='ativo').map(p=>`<option value="${p.id}" ${p.id===preProj?'selected':''}>${esc(p.name)}</option>`).join('')}</select></div>
+      <div class="grid grid-cols-2 gap-4"><div><label class="brand-label">Loja *</label><select id="nf-project" class="brand-input" onchange="ModNotasFiscais.loadBanks()"><option value="">Selecione…</option>${projects.filter(p=>p.status==='ativo').map(p=>`<option value="${p.id}" ${p.id===preProj?'selected':''}>${esc(p.name)}</option>`).join('')}</select></div>
       <div><label class="brand-label">Conta / Pix</label><select id="nf-bank" class="brand-input"><option>Selecione o projeto…</option></select></div>
       <div class="col-span-2"><label class="brand-label">Período de Competência *</label><input id="nf-period" type="month" class="brand-input" value="${S.period}" /></div></div></div></div>`,
       footer:`<button onclick="UI.closeModal()" class="brand-btn border border-slate-300 text-slate-600 hover:bg-slate-50">Cancelar</button><button onclick="ModNotasFiscais.saveNew()" class="brand-btn bg-brand-800 text-white hover:bg-brand-700">Lançar Nota</button>`});
@@ -634,7 +668,7 @@ const ModNotasFiscais={
     const{data:projects}=await DB.get('projects');const pr=projects.find(x=>x.id===n.project_id);
     UI.openModal({title:`🧾 ${n.emitter_name}`,size:'max-w-2xl',body:`<div class="space-y-4">
       <div class="flex items-center gap-3 flex-wrap">${UI.badge(n.status)}<span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">${EMITTER_LABELS[n.emitter_type]||n.emitter_type}</span><span class="text-xs text-slate-400">${Fmt.period(n.competency_period?.substring(0,7))}</span></div>
-      <div class="grid grid-cols-2 gap-4"><div><p class="brand-label">Emitente</p><p class="text-sm font-semibold">${esc(n.emitter_name)}</p></div><div><p class="brand-label">CPF/CNPJ</p><p class="text-sm">${Fmt.cnpj(n.emitter_cnpj)}</p></div><div><p class="brand-label">Serviço</p><p class="text-sm">${esc(n.service_description||'–')}</p></div><div><p class="brand-label">Projeto</p><p class="text-sm">${esc(pr?.name||'–')}</p></div><div><p class="brand-label">Emissão</p><p class="text-sm">${Fmt.date(n.issue_date)}</p></div><div><p class="brand-label">Vencimento</p><p class="text-sm">${Fmt.date(n.due_date)}</p></div></div>
+      <div class="grid grid-cols-2 gap-4"><div><p class="brand-label">Emitente</p><p class="text-sm font-semibold">${esc(n.emitter_name)}</p></div><div><p class="brand-label">CPF/CNPJ</p><p class="text-sm">${Fmt.cnpj(n.emitter_cnpj)}</p></div><div><p class="brand-label">Serviço</p><p class="text-sm">${esc(n.service_description||'–')}</p></div><div><p class="brand-label">Loja</p><p class="text-sm">${esc(pr?.name||'–')}</p></div><div><p class="brand-label">Emissão</p><p class="text-sm">${Fmt.date(n.issue_date)}</p></div><div><p class="brand-label">Vencimento</p><p class="text-sm">${Fmt.date(n.due_date)}</p></div></div>
       ${FiscalEngine.renderBreakdown(n)}
       ${n.tx_id?`<div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4"><p class="text-xs font-bold text-indigo-600 uppercase tracking-wide mb-1">TxId Pix</p><p class="font-mono text-xs text-indigo-800 break-all">${esc(n.tx_id)}</p></div>`:''}
       ${n.status==='pago_conciliado'?`<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center gap-3"><div class="w-3 h-3 bg-emerald-500 rounded-full pulse-conciliado flex-shrink-0"></div><div><p class="text-sm font-bold text-emerald-700">Pagamento Conciliado ✔</p><p class="text-xs text-emerald-600">Pago em ${Fmt.datetime(n.paid_at)} · ${Fmt.money(n.paid_amount)}</p></div></div>`:''}
@@ -733,7 +767,7 @@ const ModPendencias={
     const others=profiles.filter(u=>u.id!==S.user.id&&u.is_active);const now=new Date().toISOString().substring(0,7);
     UI.openModal({title:'+ Nova Pendência',size:'max-w-lg',body:`<div class="space-y-4">
       <div><label class="brand-label">Destinatário *</label><select id="pend-recip" class="brand-input"><option value="">Selecione…</option>${others.map(u=>`<option value="${esc(u.id)}">${esc(u.full_name)} (${esc(ROLE_LABELS[u.role]||u.role)})</option>`).join('')}</select></div>
-      <div><label class="brand-label">Projeto</label><select id="pend-proj" class="brand-input"><option value="">Nenhum</option>${projects.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')}</select></div>
+      <div><label class="brand-label">Loja</label><select id="pend-proj" class="brand-input"><option value="">Nenhum</option>${projects.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')}</select></div>
       <div><label class="brand-label">Assunto *</label><input id="pend-subject" class="brand-input" maxlength="200" /></div>
       <div class="grid grid-cols-2 gap-4"><div><label class="brand-label">Prioridade</label><select id="pend-prio" class="brand-input">${Object.entries(PRIORITY_LABELS).map(([k,v])=>`<option value="${k}" ${k==='normal'?'selected':''}>${v}</option>`).join('')}</select></div><div><label class="brand-label">Período Contábil *</label><input id="pend-period" type="month" class="brand-input" value="${esc(S.period||now)}" /></div></div>
       <div><label class="brand-label">Primeira Mensagem *</label><textarea id="pend-msg" class="brand-input h-24 resize-none"></textarea></div>
@@ -786,7 +820,7 @@ const ModRelatorio={
     UI.render(`<div class="p-6 fade-in"><div class="flex items-center justify-between mb-5 flex-wrap gap-3"><div><h1 class="text-xl font-bold text-slate-800">Balancete Mensal</h1><p class="text-sm text-slate-500">Período: ${Fmt.period(S.period)}</p></div><button onclick="window.print()" class="brand-btn border border-slate-300 text-slate-600 hover:bg-slate-50">🖨️ Imprimir</button></div>
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">${[['Total Bruto',fil.reduce((a,n)=>a+n.gross_amount,0),'text-slate-700'],['Total Retido',fil.reduce((a,n)=>a+n.tax_withheld,0),'text-red-600'],['Total Líquido',fil.reduce((a,n)=>a+n.net_amount,0),'text-emerald-700'],['Total Pago',fil.filter(n=>n.status==='pago_conciliado').reduce((a,n)=>a+(n.paid_amount||0),0),'text-blue-700']].map(([l,v,c])=>`<div class="bg-white rounded-xl border border-slate-200 p-4"><p class="text-xs text-slate-500 uppercase tracking-wide font-semibold">${l}</p><p class="text-xl font-black ${c} mt-1">${Fmt.money(v)}</p></div>`).join('')}</div>
     <div class="bg-white rounded-xl border border-slate-200 overflow-hidden"><div class="px-5 py-3 bg-slate-50 border-b border-slate-200"><h2 class="font-bold text-slate-700 text-sm">Detalhamento por Projeto</h2></div>
-    ${byProj.length===0?UI.empty('Nenhum lançamento no período','📋'):`<div class="overflow-x-auto"><table class="brand-table"><thead><tr><th>Projeto</th><th>Tipo</th><th class="text-center">NFs</th><th class="text-right">Bruto</th><th class="text-right">Retido</th><th class="text-right">Líquido</th><th class="text-right">Pago</th></tr></thead><tbody>
+    ${byProj.length===0?UI.empty('Nenhum lançamento no período','📋'):`<div class="overflow-x-auto"><table class="brand-table"><thead><tr><th>Loja</th><th>Tipo</th><th class="text-center">NFs</th><th class="text-right">Bruto</th><th class="text-right">Retido</th><th class="text-right">Líquido</th><th class="text-right">Pago</th></tr></thead><tbody>
     ${byProj.map(p=>`<tr><td><p class="font-semibold text-slate-800 text-sm">${esc(p.name)}</p><p class="text-xs text-slate-400">${esc(p.code||'–')}</p></td><td><span class="text-xs px-2 py-0.5 rounded-full font-semibold ${p.type==='Livre'?'bg-blue-100 text-blue-700':'bg-purple-100 text-purple-700'}">${esc(p.type)}</span></td><td class="text-center">${p.notes.length}</td><td class="text-right font-mono text-sm">${Fmt.money(p.bruto)}</td><td class="text-right font-mono text-sm text-red-600">–${Fmt.money(p.retido)}</td><td class="text-right font-mono text-sm font-bold text-emerald-700">${Fmt.money(p.liq)}</td><td class="text-right font-mono text-sm text-blue-700">${Fmt.money(p.pago)}</td></tr>`).join('')}
     <tr class="bg-slate-50 font-bold border-t-2 border-slate-300"><td colspan="3" class="font-bold text-slate-700 py-3">TOTAL GERAL</td><td class="text-right font-mono text-sm">${Fmt.money(byProj.reduce((a,p)=>a+p.bruto,0))}</td><td class="text-right font-mono text-sm text-red-600">–${Fmt.money(byProj.reduce((a,p)=>a+p.retido,0))}</td><td class="text-right font-mono text-sm text-emerald-700">${Fmt.money(byProj.reduce((a,p)=>a+p.liq,0))}</td><td class="text-right font-mono text-sm text-blue-700">${Fmt.money(byProj.reduce((a,p)=>a+p.pago,0))}</td></tr>
     </tbody></table></div>`}</div></div>`);
@@ -815,7 +849,7 @@ const ModUsuarios={
       </tr>`).join('')}</tbody></table></div>
     </div>
     <div class="bg-white rounded-xl border border-slate-200 p-5"><h3 class="font-bold text-slate-700 text-sm mb-4">Matriz de Permissões (RBAC)</h3><div class="overflow-x-auto"><table class="w-full text-xs"><thead><tr><th class="text-left py-2 pr-4 text-slate-500 font-semibold">Permissão</th>${Object.keys(RBAC.rules).map(r=>`<th class="py-2 px-2 text-center text-slate-500 font-semibold">${ROLE_LABELS[r]}</th>`).join('')}</tr></thead><tbody>
-    ${[['canCreateNote','Criar Nota Fiscal'],['canApprove','Aprovar / Gerar Pix'],['canManageBanks','Contas Bancárias'],['canViewReports','Relatórios'],['canManageUsers','Usuários'],['canSendPend','Enviar Pendências']].map(([perm,label])=>`<tr class="border-t border-slate-100"><td class="py-2 pr-4 text-slate-600">${label}</td>${Object.keys(RBAC.rules).map(r=>`<td class="py-2 px-2 text-center">${RBAC.rules[r][perm]?'✅':'–'}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div></div>`);
+    ${[['canCreateNote','Criar Nota Fiscal'],['canApprove','Aprovar / Gerar Pix'],['canManageBanks','Contas Bancárias'],['canViewReports','Relatórios'],['canManageUsers','Usuários'],['canSendPend','Enviar Pendências'],['canManageAssets','Gerir Imobilizado'],['canUseCnpj','Ferramenta CNPJ'],['canDelete','Excluir Lojas/Bens']].map(([perm,label])=>`<tr class="border-t border-slate-100"><td class="py-2 pr-4 text-slate-600">${label}</td>${Object.keys(RBAC.rules).map(r=>`<td class="py-2 px-2 text-center">${RBAC.rules[r][perm]?'✅':'–'}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div></div>`);
   },
   async openNew(){
     if(!RBAC.can('canManageUsers')){UI.toast('Sem permissão','error');return;}
@@ -904,17 +938,258 @@ const ModConfiguracoes={
   resetDemo(){UI.confirm('Resetar todos os dados de demonstração?',()=>{try{localStorage.removeItem(DB.KEY);}catch{}DB.init();UI.toast('✅ Dados resetados','success');App.navigate('dashboard');App.updateFavoritesList();App.updateBadges();},{danger:true});}
 };
 
+// ═══════════ FERRAMENTA: CNPJ (digitar e copiar com 1 clique) ═══════════
+const CnpjTool={
+  digits(v){return String(v||'').replace(/\D/g,'').slice(0,14);},
+  format(v){
+    const d=this.digits(v);
+    if(d.length>12)return d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2}).*/,'$1.$2.$3/$4-$5');
+    if(d.length>8)return d.replace(/^(\d{2})(\d{3})(\d{3})(\d{0,4}).*/,'$1.$2.$3/$4');
+    if(d.length>5)return d.replace(/^(\d{2})(\d{3})(\d{0,3}).*/,'$1.$2.$3');
+    if(d.length>2)return d.replace(/^(\d{2})(\d{0,3}).*/,'$1.$2');
+    return d;
+  },
+  valid(v){
+    const d=this.digits(v);
+    if(d.length!==14||/^(\d)\1+$/.test(d))return false;
+    const dv=(base,w)=>{const s=base.split('').reduce((a,c,i)=>a+Number(c)*w[i],0)%11;return s<2?0:11-s;};
+    const d1=dv(d.slice(0,12),[5,4,3,2,9,8,7,6,5,4,3,2]);
+    const d2=dv(d.slice(0,12)+d1,[6,5,4,3,2,9,8,7,6,5,4,3,2]);
+    return d===d.slice(0,12)+d1+d2;
+  },
+  maskInput(el){el.value=this.format(el.value);},
+  async copy(text,formatted=true){
+    const out=formatted?this.format(text):this.digits(text);
+    if(!out){UI.toast('Digite um CNPJ primeiro','warning');return;}
+    let ok=false;
+    try{await navigator.clipboard.writeText(out);ok=true;}
+    catch{
+      try{const t=document.createElement('textarea');t.value=out;t.style.cssText='position:fixed;opacity:0';document.body.appendChild(t);t.select();ok=document.execCommand('copy');t.remove();}catch{}
+    }
+    if(ok)UI.toast('📋 Copiado: '+out,'success',2200);else UI.toast('Não foi possível copiar. Selecione e use Ctrl+C.','error');
+  },
+  onType(el){
+    this.maskInput(el);
+    const st=document.getElementById('cnpj-status');if(!st)return;
+    const n=this.digits(el.value).length;
+    if(n===0)st.innerHTML='';
+    else if(n<14)st.innerHTML=`<span class="text-slate-400">${n}/14 dígitos</span>`;
+    else st.innerHTML=this.valid(el.value)?'<span class="text-emerald-600 font-semibold">✔ CNPJ válido</span>':'<span class="text-red-600 font-semibold">✖ Dígitos verificadores inválidos</span>';
+  },
+  async open(){
+    if(!RBAC.can('canUseCnpj')){UI.toast('Sem permissão','error');return;}
+    const{data:stores}=await DB.get('projects');
+    const withCnpj=stores.filter(s=>s.cnpj);
+    UI.openModal({title:'🔢 CNPJ — digitar e copiar',size:'max-w-md',body:`<div class="space-y-4">
+      <div><label class="brand-label">Digite ou cole o CNPJ</label>
+        <input id="cnpj-in" inputmode="numeric" autocomplete="off" maxlength="18" placeholder="00.000.000/0000-00" class="brand-input font-mono text-lg tracking-wide" oninput="CnpjTool.onType(this)" onkeydown="if(event.key==='Enter'){CnpjTool.copy(this.value,true)}" />
+        <p id="cnpj-status" class="text-xs mt-1 h-4"></p></div>
+      <div class="grid grid-cols-2 gap-3">
+        <button onclick="CnpjTool.copy(document.getElementById('cnpj-in').value,true)" class="brand-btn bg-brand-800 text-white hover:bg-brand-700 justify-center">📋 Copiar formatado</button>
+        <button onclick="CnpjTool.copy(document.getElementById('cnpj-in').value,false)" class="brand-btn border border-slate-300 text-slate-700 hover:bg-slate-50 justify-center">📋 Só números</button>
+      </div>
+      <div><p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">CNPJ das lojas cadastradas</p>
+      ${withCnpj.length===0?'<p class="text-sm text-slate-400 italic">Nenhuma loja com CNPJ. Informe o CNPJ ao cadastrar/editar a loja.</p>':`<div class="space-y-1.5 max-h-56 overflow-y-auto">${withCnpj.map(s=>`<div class="flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg"><div class="flex-1 min-w-0"><p class="text-sm font-semibold text-slate-700 truncate">${esc(s.name)}</p><p class="text-xs font-mono text-slate-500">${esc(Fmt.cnpj(s.cnpj))}</p></div><button onclick="CnpjTool.copy('${esc(s.cnpj)}',true)" class="text-xs px-2 py-1 rounded border border-slate-300 hover:bg-white" title="Copiar formatado">📋</button><button onclick="CnpjTool.copy('${esc(s.cnpj)}',false)" class="text-xs px-2 py-1 rounded border border-slate-300 hover:bg-white font-mono" title="Copiar só números">123</button></div>`).join('')}</div>`}</div>
+    </div>`,footer:`<button onclick="UI.closeModal()" class="brand-btn border border-slate-300 text-slate-600 hover:bg-slate-50">Fechar</button>`});
+  }
+};
+
+// ═══════════ MODULE: IMOBILIZADO ═══════════
+const ASSET_CATEGORIES={
+  moveis:{label:'Móveis e utensílios',years:10},
+  maquinas:{label:'Máquinas e equipamentos',years:10},
+  veiculos:{label:'Veículos',years:5},
+  informatica:{label:'Computadores e periféricos',years:5},
+  instalacoes:{label:'Instalações',years:10},
+  edificacoes:{label:'Edificações',years:25},
+  terrenos:{label:'Terrenos (não deprecia)',years:0},
+  software:{label:'Software / Intangível',years:5},
+  outros:{label:'Outros',years:10},
+};
+
+const AssetEngine={
+  ym(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;},
+  prevYm(ym){const[y,m]=ym.split('-').map(Number);return this.ym(new Date(y,m-2,1));},
+  // Depreciação linear, a partir do mês de aquisição, até o mês de referência (ou da baixa)
+  calc(a,ym){
+    const life=Math.max(0,parseInt(a.useful_life_months)||0);
+    const cost=Number(a.acquisition_value)||0;
+    const residual=Math.min(Number(a.residual_value)||0,cost);
+    const base=Math.max(0,cost-residual);
+    const start=(a.acquisition_date||'').slice(0,7);
+    let end=ym;
+    if(a.status==='baixado'&&a.disposal_date){const dm=a.disposal_date.slice(0,7);if(dm<end)end=dm;}
+    let months=0;
+    if(life>0&&start&&end>=start){const[sy,sm]=start.split('-').map(Number);const[ey,em]=end.split('-').map(Number);months=Math.min(life,(ey-sy)*12+(em-sm)+1);}
+    const monthly=life>0?round2(base/life):0;
+    const accumulated=life>0?(months>=life?round2(base):round2(monthly*months)):0;
+    return{life,cost,residual,base,monthly,months,accumulated,book:round2(cost-accumulated),fully:life>0&&months>=life,future:!start||start>ym};
+  },
+  // Integra o balanço no fim do mês de referência?
+  inBooks(a,ym){
+    const s=(a.acquisition_date||'').slice(0,7);
+    if(!s||s>ym)return false;
+    if(a.status==='baixado'&&a.disposal_date&&a.disposal_date.slice(0,7)<=ym)return false;
+    return true;
+  },
+  endMonth(a){
+    const life=parseInt(a.useful_life_months)||0;const s=(a.acquisition_date||'').slice(0,7);
+    if(!life||!s)return '';const[y,m]=s.split('-').map(Number);return this.ym(new Date(y,m-1+life-1,1));
+  }
+};
+
+const ModImobilizado={
+  f:{store:'',status:'ativo',q:''},
+  async render(){
+    const{data:stores}=await DB.get('projects');
+    UI.render(`<div class="p-6 fade-in">
+      <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+        <div><h1 class="text-xl font-bold text-slate-800">Controle de Imobilizado</h1><p class="text-sm text-slate-500 mt-0.5">Posição em <b>${Fmt.period(S.period)}</b> · depreciação linear mensal</p></div>
+        <div class="flex gap-2 flex-wrap"><button onclick="ModImobilizado.exportCsv()" class="brand-btn border border-slate-300 text-slate-600 hover:bg-slate-50">⬇ Exportar CSV</button><button onclick="ModImobilizado.openForm()" class="brand-btn bg-brand-800 text-white hover:bg-brand-700 shadow-sm">+ Novo Bem</button></div>
+      </div>
+      <div class="flex gap-3 flex-wrap mb-4">
+        <select id="imb-store" class="brand-input" style="width:auto" onchange="ModImobilizado.setFilter('store',this.value)"><option value="">Todas as lojas</option>${stores.map(s=>`<option value="${esc(s.id)}" ${s.id===this.f.store?'selected':''}>${esc(s.name)}</option>`).join('')}</select>
+        <select id="imb-status" class="brand-input" style="width:auto" onchange="ModImobilizado.setFilter('status',this.value)"><option value="ativo" ${this.f.status==='ativo'?'selected':''}>Em uso</option><option value="baixado" ${this.f.status==='baixado'?'selected':''}>Baixados</option><option value="" ${this.f.status===''?'selected':''}>Todos</option></select>
+        <input id="imb-q" class="brand-input" style="width:16rem" placeholder="Buscar bem, código, fornecedor…" value="${esc(this.f.q)}" oninput="ModImobilizado.setFilter('q',this.value)" />
+      </div>
+      <div id="imob-body"></div>
+      <p class="text-xs text-slate-400 mt-4">Prazos sugeridos por categoria seguem as vidas úteis fiscais usuais (ajuste o campo “vida útil” conforme a política contábil). A depreciação começa no mês de aquisição; terrenos não depreciam.</p>
+    </div>`);
+    await this.draw();
+  },
+  setFilter(k,v){this.f[k]=v;clearTimeout(this._t);this._t=setTimeout(()=>this.draw(),k==='q'?200:0);},
+  async _rows(){
+    const{data:assets}=await DB.get('fixed_assets');const{data:stores}=await DB.get('projects');
+    const ym=S.period||AssetEngine.ym(new Date());const q=this.f.q.trim().toLowerCase();
+    const rows=assets.filter(a=>(!this.f.store||a.store_id===this.f.store)&&(!this.f.status||a.status===this.f.status)
+      &&(!q||`${a.description||''} ${a.code||''} ${a.supplier||''} ${a.invoice_number||''}`.toLowerCase().includes(q)))
+      .map(a=>({...a,_c:AssetEngine.calc(a,ym),_store:stores.find(s=>s.id===a.store_id)}))
+      .sort((x,y)=>(x.code||'').localeCompare(y.code||''));
+    return{rows,assets,ym,stores};
+  },
+  async draw(){
+    const el=document.getElementById('imob-body');if(!el)return;
+    const{rows,assets,ym}=await this._rows();const prev=AssetEngine.prevYm(ym);
+    const live=rows.filter(a=>AssetEngine.inBooks(a,ym));
+    const sum=f=>round2(live.reduce((s,a)=>s+f(a),0));
+    const depMonth=round2(assets.filter(a=>(!this.f.store||a.store_id===this.f.store)).reduce((s,a)=>s+(AssetEngine.calc(a,ym).accumulated-AssetEngine.calc(a,prev).accumulated),0));
+    const kpi=(l,v,c,sub)=>`<div class="bg-white rounded-xl border border-slate-200 p-4"><p class="text-xs text-slate-500 uppercase tracking-wide font-semibold">${l}</p><p class="text-xl font-black ${c} mt-1">${v}</p>${sub?`<p class="text-xs text-slate-400 mt-0.5">${sub}</p>`:''}</div>`;
+    el.innerHTML=`<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+      ${kpi('Custo de aquisição',Fmt.money(sum(a=>a._c.cost)),'text-slate-700',live.length+' bem(ns) no balanço')}
+      ${kpi('Depreciação acumulada',Fmt.money(sum(a=>a._c.accumulated)),'text-red-600','')}
+      ${kpi('Valor contábil líquido',Fmt.money(sum(a=>a._c.book)),'text-emerald-700','')}
+      ${kpi('Depreciação do mês',Fmt.money(depMonth),'text-amber-600',Fmt.period(ym))}
+    </div>
+    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">${rows.length===0?UI.empty('Nenhum bem encontrado','🏭'):`<div class="overflow-x-auto"><table class="brand-table"><thead><tr><th>Bem</th><th>Loja</th><th>Categoria</th><th>Aquisição</th><th class="text-right">Custo</th><th class="text-right">Depr. acum.</th><th class="text-right">Valor líquido</th><th>Situação</th><th class="text-center">Ações</th></tr></thead><tbody>
+    ${rows.map(a=>{const c=a._c;const sit=a.status==='baixado'?'<span class="badge bg-slate-100 text-slate-600">Baixado</span>':c.future?'<span class="badge bg-blue-100 text-blue-700">Futuro</span>':c.life===0?'<span class="badge bg-slate-100 text-slate-600">Não deprecia</span>':c.fully?'<span class="badge bg-purple-100 text-purple-700">Totalmente depreciado</span>':`<span class="badge bg-emerald-100 text-emerald-700">${c.months}/${c.life} meses</span>`;
+      return`<tr><td><p class="font-semibold text-slate-800 text-sm">${esc(a.description)}</p><p class="text-xs text-slate-400 font-mono">${esc(a.code||'–')}</p></td><td class="text-xs text-slate-500">${esc(a._store?.name||'–')}</td><td class="text-xs text-slate-500">${esc(ASSET_CATEGORIES[a.category]?.label||a.category)}</td><td class="text-sm">${Fmt.date(a.acquisition_date)}</td><td class="text-right font-mono text-sm">${Fmt.money(c.cost)}</td><td class="text-right font-mono text-sm text-red-600">${Fmt.money(c.accumulated)}</td><td class="text-right font-mono text-sm font-bold text-emerald-700">${Fmt.money(c.book)}</td><td>${sit}</td><td class="text-center"><div class="flex items-center justify-center gap-1"><button onclick="ModImobilizado.openDetail('${esc(a.id)}')" class="text-xs px-2 py-1 rounded text-slate-600 hover:bg-slate-100" title="Detalhes">👁️</button><button onclick="ModImobilizado.openForm('${esc(a.id)}')" class="text-xs px-2 py-1 rounded text-slate-600 hover:bg-slate-100" title="Editar">✏️</button></div></td></tr>`;}).join('')}
+    </tbody></table></div>`}</div>`;
+  },
+  _opts(sel){return Object.entries(ASSET_CATEGORIES).map(([k,v])=>`<option value="${k}" ${k===sel?'selected':''}>${v.label}</option>`).join('');},
+  onCat(){const c=document.getElementById('imb-cat')?.value;const l=document.getElementById('imb-life');if(l&&ASSET_CATEGORIES[c])l.value=ASSET_CATEGORIES[c].years*12;},
+  async openForm(id=''){
+    if(!RBAC.can('canManageAssets')){UI.toast('Sem permissão','error');return;}
+    const{data:stores}=await DB.get('projects');
+    let a={store_id:this.f.store||'',category:'maquinas',useful_life_months:120,residual_value:0,acquisition_date:new Date().toISOString().slice(0,10)};
+    if(id){const{data}=await DB.getById('fixed_assets',id);if(!data)return;a=data;}
+    UI.openModal({title:id?'✏️ Editar bem':'+ Novo bem do imobilizado',size:'max-w-2xl',body:`<div class="grid grid-cols-2 gap-4">
+      <div class="col-span-2"><label class="brand-label">Descrição *</label><input id="imb-desc" class="brand-input" maxlength="200" value="${esc(a.description||'')}" placeholder="Ex: Ar-condicionado split 24.000 BTU" /></div>
+      <div><label class="brand-label">Loja *</label><select id="imb-st" class="brand-input"><option value="">Selecione…</option>${stores.map(s=>`<option value="${esc(s.id)}" ${s.id===a.store_id?'selected':''}>${esc(s.name)}</option>`).join('')}</select></div>
+      <div><label class="brand-label">Código / Tombo</label><input id="imb-code" class="brand-input" maxlength="40" value="${esc(a.code||'')}" placeholder="Automático se vazio" /></div>
+      <div><label class="brand-label">Categoria *</label><select id="imb-cat" class="brand-input" onchange="ModImobilizado.onCat()">${this._opts(a.category)}</select></div>
+      <div><label class="brand-label">Vida útil (meses) — 0 = não deprecia</label><input id="imb-life" type="number" min="0" max="600" step="1" class="brand-input" value="${esc(a.useful_life_months??120)}" /></div>
+      <div><label class="brand-label">Data de aquisição *</label><input id="imb-date" type="date" class="brand-input" value="${esc((a.acquisition_date||'').slice(0,10))}" /></div>
+      <div><label class="brand-label">Valor de aquisição (R$) *</label><input id="imb-val" type="number" min="0.01" step="0.01" class="brand-input" value="${esc(a.acquisition_value??'')}" /></div>
+      <div><label class="brand-label">Valor residual (R$)</label><input id="imb-res" type="number" min="0" step="0.01" class="brand-input" value="${esc(a.residual_value??0)}" /></div>
+      <div><label class="brand-label">Fornecedor</label><input id="imb-sup" class="brand-input" maxlength="120" value="${esc(a.supplier||'')}" /></div>
+      <div><label class="brand-label">Nº da nota fiscal</label><input id="imb-nf" class="brand-input" maxlength="60" value="${esc(a.invoice_number||'')}" /></div>
+      <div class="col-span-2"><label class="brand-label">Observações</label><textarea id="imb-notes" class="brand-input h-16 resize-none">${esc(a.notes||'')}</textarea></div>
+    </div>`,footer:`${id&&RBAC.can('canDelete')?`<button onclick="ModImobilizado.remove('${esc(id)}')" class="brand-btn border border-red-300 text-red-600 hover:bg-red-50 mr-auto">🗑️ Excluir</button>`:''}<button onclick="UI.closeModal()" class="brand-btn border border-slate-300 text-slate-600 hover:bg-slate-50">Cancelar</button><button onclick="ModImobilizado.saveForm('${esc(id)}')" class="brand-btn bg-brand-800 text-white hover:bg-brand-700">Salvar</button>`});
+  },
+  async saveForm(id){
+    if(!RBAC.can('canManageAssets')){UI.toast('Sem permissão','error');return;}
+    const g=x=>document.getElementById(x)?.value.trim();
+    const value=parseFloat(g('imb-val'));const residual=parseFloat(g('imb-res'))||0;
+    let life=parseInt(g('imb-life'));if(isNaN(life)||life<0)life=0;
+    const cat=g('imb-cat');if(cat==='terrenos')life=0;
+    if(!g('imb-desc')||!g('imb-st')||!g('imb-date')){UI.toast('Preencha descrição, loja e data','warning');return;}
+    if(isNaN(value)||value<=0){UI.toast('Informe um valor de aquisição válido','warning');return;}
+    if(residual<0||residual>value){UI.toast('Valor residual deve estar entre 0 e o valor de aquisição','warning');return;}
+    const{data:all}=await DB.get('fixed_assets');
+    let code=g('imb-code');
+    if(!code){const n=all.map(x=>parseInt(String(x.code||'').replace(/\D/g,''))||0);code='IMB-'+String(Math.max(0,...n)+1).padStart(4,'0');}
+    if(all.some(x=>x.id!==id&&(x.code||'').toLowerCase()===code.toLowerCase())){UI.toast('Já existe um bem com este código','warning');return;}
+    const row={store_id:g('imb-st'),code,description:g('imb-desc'),category:cat,acquisition_date:g('imb-date'),acquisition_value:value,residual_value:residual,useful_life_months:life,supplier:g('imb-sup')||null,invoice_number:g('imb-nf')||null,notes:g('imb-notes')||null};
+    if(id)await DB.update('fixed_assets',id,row);else await DB.insert('fixed_assets',{...row,status:'ativo'});
+    UI.closeModal();UI.toast(id?'✅ Bem atualizado':'✅ Bem cadastrado','success');
+    if(S.module==='imobilizado')await this.render();
+  },
+  async openDetail(id){
+    const{data:a}=await DB.getById('fixed_assets',id);if(!a)return;
+    const{data:stores}=await DB.get('projects');const st=stores.find(s=>s.id===a.store_id);
+    const ym=S.period||AssetEngine.ym(new Date());const c=AssetEngine.calc(a,ym);
+    const row=(l,v)=>`<div><p class="brand-label">${l}</p><p class="text-sm text-slate-700">${v}</p></div>`;
+    UI.openModal({title:`🏭 ${a.description}`,size:'max-w-2xl',body:`<div class="space-y-4">
+      <div class="grid grid-cols-2 gap-4">${row('Código',esc(a.code||'–'))}${row('Loja',esc(st?.name||'–'))}${row('Categoria',esc(ASSET_CATEGORIES[a.category]?.label||a.category))}${row('Situação',a.status==='baixado'?'Baixado em '+Fmt.date(a.disposal_date):'Em uso')}${row('Aquisição',Fmt.date(a.acquisition_date))}${row('Fornecedor / NF',esc((a.supplier||'–')+(a.invoice_number?' · NF '+a.invoice_number:'')))}</div>
+      <div class="bg-slate-50 rounded-xl p-4 border border-slate-200"><p class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Depreciação — posição em ${Fmt.period(ym)}</p>
+      <table class="w-full text-sm"><tr><td class="py-1 text-slate-600">Custo de aquisição</td><td class="text-right font-mono">${Fmt.money(c.cost)}</td></tr>
+      <tr><td class="py-1 text-slate-600">Valor residual</td><td class="text-right font-mono">${Fmt.money(c.residual)}</td></tr>
+      <tr><td class="py-1 text-slate-600">Vida útil</td><td class="text-right font-mono">${c.life?c.life+' meses (até '+Fmt.period(AssetEngine.endMonth(a))+')':'não deprecia'}</td></tr>
+      <tr><td class="py-1 text-slate-600">Depreciação mensal</td><td class="text-right font-mono">${Fmt.money(c.monthly)}</td></tr>
+      <tr><td class="py-1 text-red-600">Depreciação acumulada (${c.months} mês(es))</td><td class="text-right font-mono text-red-600">– ${Fmt.money(c.accumulated)}</td></tr>
+      <tr class="border-t border-slate-300"><td class="pt-2 font-bold text-emerald-700">Valor contábil líquido</td><td class="pt-2 text-right font-black text-emerald-700">${Fmt.money(c.book)}</td></tr></table></div>
+      ${a.status==='baixado'&&a.disposal_reason?`<div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800"><b>Motivo da baixa:</b> ${esc(a.disposal_reason)}</div>`:''}
+      ${a.notes?`<div class="bg-slate-50 rounded-lg p-3 border"><p class="text-xs font-semibold text-slate-500 mb-1">Obs.</p><p class="text-sm text-slate-600 whitespace-pre-wrap">${esc(a.notes)}</p></div>`:''}</div>`,
+      footer:`${a.status!=='baixado'?`<button onclick="ModImobilizado.openBaixa('${esc(id)}')" class="brand-btn border border-amber-300 text-amber-700 hover:bg-amber-50 mr-auto">📤 Baixar bem</button>`:`<button onclick="ModImobilizado.reopen('${esc(id)}')" class="brand-btn border border-slate-300 text-slate-600 hover:bg-slate-50 mr-auto">↩ Desfazer baixa</button>`}<button onclick="UI.closeModal()" class="brand-btn border border-slate-300 text-slate-600 hover:bg-slate-50">Fechar</button><button onclick="ModImobilizado.openForm('${esc(id)}')" class="brand-btn bg-brand-800 text-white hover:bg-brand-700">✏️ Editar</button>`});
+  },
+  openBaixa(id){
+    if(!RBAC.can('canManageAssets')){UI.toast('Sem permissão','error');return;}
+    UI.openModal({title:'📤 Baixar bem',size:'max-w-md',body:`<div class="space-y-4"><div><label class="brand-label">Data da baixa *</label><input id="bx-date" type="date" class="brand-input" value="${new Date().toISOString().slice(0,10)}" /></div>
+      <div><label class="brand-label">Motivo *</label><select id="bx-reason" class="brand-input"><option>Venda</option><option>Perda / furto</option><option>Sucata / inservível</option><option>Doação</option><option>Transferência entre lojas</option><option>Outro</option></select></div>
+      <div><label class="brand-label">Detalhe</label><input id="bx-det" class="brand-input" maxlength="200" placeholder="Opcional" /></div></div>`,
+      footer:`<button onclick="UI.closeModal()" class="brand-btn border border-slate-300 text-slate-600 hover:bg-slate-50">Cancelar</button><button onclick="ModImobilizado.saveBaixa('${esc(id)}')" class="brand-btn bg-amber-500 text-white hover:bg-amber-600">Confirmar baixa</button>`});
+  },
+  async saveBaixa(id){
+    const d=document.getElementById('bx-date')?.value;const r=document.getElementById('bx-reason')?.value;const det=document.getElementById('bx-det')?.value.trim();
+    if(!d){UI.toast('Informe a data da baixa','warning');return;}
+    await DB.update('fixed_assets',id,{status:'baixado',disposal_date:d,disposal_reason:r+(det?' – '+det:'')});
+    UI.closeModal();UI.toast('Bem baixado','info');if(S.module==='imobilizado')await this.render();
+  },
+  reopen(id){
+    UI.confirm('Desfazer a baixa e voltar o bem para “em uso”?',async()=>{
+      await DB.update('fixed_assets',id,{status:'ativo',disposal_date:null,disposal_reason:null});
+      UI.toast('Baixa desfeita','info');if(S.module==='imobilizado')await this.render();
+    });
+  },
+  remove(id){
+    if(!RBAC.can('canDelete')){UI.toast('Sem permissão','error');return;}
+    UI.confirm('Excluir definitivamente este bem? Prefira “Baixar bem” para manter o histórico.',async()=>{
+      await DB.delete('fixed_assets',id);UI.toast('Bem excluído','info');if(S.module==='imobilizado')await this.render();
+    },{danger:true});
+  },
+  async exportCsv(){
+    const{rows,ym}=await this._rows();
+    if(!rows.length){UI.toast('Nada para exportar','warning');return;}
+    const n=v=>String(round2(v)).replace('.',',');const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+    const lines=[['Código','Descrição','Loja','Categoria','Aquisição','Custo','Residual','Vida útil (meses)','Depr. mensal','Depr. acumulada','Valor líquido','Situação','Baixa em'].join(';')];
+    rows.forEach(a=>{const c=a._c;lines.push([q(a.code),q(a.description),q(a._store?.name),q(ASSET_CATEGORIES[a.category]?.label),a.acquisition_date||'',n(c.cost),n(c.residual),c.life,n(c.monthly),n(c.accumulated),n(c.book),a.status,a.disposal_date||''].join(';'));});
+    const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
+    const el=document.createElement('a');el.href=URL.createObjectURL(blob);el.download=`imobilizado-${ym}.csv`;document.body.appendChild(el);el.click();el.remove();setTimeout(()=>URL.revokeObjectURL(el.href),1000);
+  }
+};
+
 // ═══════════ APP — Router, Sidebar, PWA ═══════════
 const App={
   MODULE_MAP:{
     'dashboard':{label:'Dashboard',mod:()=>ModDashboard.render()},
-    'projetos':{label:'Projetos',mod:()=>ModProjetos.render()},
+    'projetos':{label:'Lojas',mod:()=>ModProjetos.render()},
     'contas-bancarias':{label:'Contas Bancárias',mod:()=>ModContasBancarias.render()},
+    'imobilizado':{label:'Imobilizado',perm:'canViewReports',mod:()=>ModImobilizado.render()},
     'notas-fiscais':{label:'Notas Fiscais',mod:()=>ModNotasFiscais.render()},
     'pix':{label:'Pix & Pagamentos',mod:()=>ModPix.render()},
     'pendencias':{label:'Pendências',mod:()=>ModPendencias.render()},
     'relatorio-mensal':{label:'Balancete Mensal',perm:'canViewReports',mod:()=>ModRelatorio.render()},
-    'relatorio-projetos':{label:'Rel. de Projetos',perm:'canViewReports',mod:()=>ModProjetos.render()},
+    'relatorio-projetos':{label:'Rel. de Lojas',perm:'canViewReports',mod:()=>ModProjetos.render()},
     'usuarios':{label:'Usuários e Papéis',perm:'canManageUsers',mod:()=>ModUsuarios.render()},
     'configuracoes':{label:'Configurações',mod:()=>ModConfiguracoes.render()},
   },
@@ -997,7 +1272,7 @@ const App={
       body:`<div class="text-center space-y-3">
         <div class="w-14 h-14 bg-brand-800 rounded-xl flex items-center justify-center text-white text-xl font-black mx-auto">ARF</div>
         <p class="font-bold text-slate-800">ARF – Gestão Contábil e Operacional</p>
-        <p class="text-sm text-slate-500">v1.1.0 · ITG 2002 Compatível</p>
+        <p class="text-sm text-slate-500">v1.2.0 · ITG 2002 Compatível</p>
         <div class="bg-slate-50 rounded-xl p-4 text-left text-xs text-slate-600 space-y-1.5">
           <p>⚖️ Motor Fiscal (MEI, Simples, LP, LR, PF)</p><p>🏦 Pix EMV com TxId e QR Code</p><p>💬 Comunicação Interna Estruturada</p><p>🔐 RBAC — 5 papéis + RLS no Supabase</p><p>📱 PWA Instalável — offline-capable</p>
         </div>
@@ -1057,7 +1332,7 @@ const App={
   },
 
   async init(){
-    console.log('[ARF] Inicializando v1.1.0…');
+    console.log('[ARF] Inicializando v1.2.0…');
     this.initPWA();
     this.initPeriod();
     const session=await Auth.checkSession();
