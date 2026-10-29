@@ -1,11 +1,11 @@
 // =====================================================
-// ARF – Service Worker  |  sw.js  |  v1.2.0
+// ARF – Service Worker  |  sw.js  |  v1.2.1
 // Navegação, index.html, app.js e manifest: network-first (sempre a versão nova online).
 // Demais assets (ícones etc.): cache-first. Supabase e CDNs: nunca interceptados.
 // Para publicar uma versão nova, incremente CACHE_NAME.
 // =====================================================
 
-const CACHE_NAME   = 'arf-v1.2.0';
+const CACHE_NAME   = 'arf-v1.2.1';
 const OFFLINE_PAGE = './index.html';
 
 const STATIC_ASSETS = [
