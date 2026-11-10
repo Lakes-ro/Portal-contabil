@@ -4,10 +4,11 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
   <meta name="theme-color" content="#0F2D4E"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="apple-mobile-web-app-title" content="ARF"/>
-  <link rel="icon" type="image/png" href="icons/icon-96.png"/>
+  <link rel="icon" type="image/png" href="icons/icon-192.png"/>
   <link rel="apple-touch-icon" href="icons/icon-192.png"/>
   <link rel="manifest" href="manifest.json"/>
   <title>ARF - Gestão Contábil</title>
@@ -179,6 +180,14 @@
         </div>
       </div>
       <div>
+        <button class="w-full flex items-center justify-between px-3 py-1.5 text-[10px] text-brand-200 uppercase tracking-widest font-semibold rounded hover:bg-white/5" onclick="App.toggleNavSection('info')">
+          <span>Info</span><span id="chv-info" class="text-sm">v</span>
+        </button>
+        <div id="sec-info" class="ml-2 space-y-0.5">
+          <a href="#" class="nav-item flex items-center gap-2 px-3 py-2 text-sm text-brand-100 rounded-lg" data-module="info" onclick="App.navigate('info');return false;"><span>📚</span><span>Tabelas RPA</span></a>
+        </div>
+      </div>
+      <div>
         <button class="w-full flex items-center justify-between px-3 py-1.5 text-[10px] text-brand-200 uppercase tracking-widest font-semibold rounded hover:bg-white/5" onclick="App.toggleNavSection('tools')">
           <span>Ferramentas</span><span id="chv-tools" class="text-sm">v</span>
         </button>
@@ -248,5 +257,6 @@
 <div id="toast-container" class="fixed bottom-24 right-4 z-[80] flex flex-col gap-2 pointer-events-none" aria-live="polite"></div>
 
 <script src="app.js"></script>
+<script src="info.js"></script>
 </body>
 </html>
