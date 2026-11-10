@@ -1,16 +1,16 @@
 // =====================================================
-// ARF – Service Worker  |  sw.js  |  v1.2.1
-// Navegação, index.html, app.js e manifest: network-first (sempre a versão nova online).
+// ARF – Service Worker  |  sw.js  |  v1.2.3
+// Navegação, index.html, app.js, info.js e manifest: network-first (sempre a versão nova online).
 // Demais assets (ícones etc.): cache-first. Supabase e CDNs: nunca interceptados.
 // Para publicar uma versão nova, incremente CACHE_NAME.
 // =====================================================
 
-const CACHE_NAME   = 'arf-v1.2.1';
+const CACHE_NAME   = 'arf-v1.2.3';
 const OFFLINE_PAGE = './index.html';
 
 const STATIC_ASSETS = [
-  './', './index.html', './app.js', './manifest.json',
-  './icons/icon-72.png', './icons/icon-96.png', './icons/icon-128.png', './icons/icon-144.png',
+  './', './index.html', './app.js', './info.js', './manifest.json',
+  './icons/icon-72.png', './icons/icon-128.png',
   './icons/icon-152.png', './icons/icon-192.png', './icons/icon-384.png', './icons/icon-512.png',
 ];
 
@@ -38,7 +38,7 @@ self.addEventListener('fetch', event => {
   if (req.method !== 'GET' || url.origin !== location.origin) return;   // Supabase/CDNs passam direto
 
   const p = url.pathname;
-  const critical = req.mode === 'navigate' || p.endsWith('/app.js') || p.endsWith('/index.html')
+  const critical = req.mode === 'navigate' || p.endsWith('/app.js') || p.endsWith('/info.js') || p.endsWith('/index.html')
                 || p.endsWith('/manifest.json') || p.endsWith('/sw.js') || p.endsWith('/');
 
   if (critical) {
