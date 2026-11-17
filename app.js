@@ -1,6 +1,6 @@
 'use strict';
 // ================================================================
-// ARF - Gestão Contábil e Operacional  |  v1.2.1
+// ARF - Gestão Contábil e Operacional  |  v1.2.4
 // ================================================================
 
 // ── ESCAPE GLOBAL (todo valor vindo do usuário/banco passa por aqui) ─
@@ -12,7 +12,7 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
     ['period','url','key'].forEach(k=>{
       const old=localStorage.getItem('arf_'+k);
       if(old!==null&&localStorage.getItem('arf_'+k)===null)localStorage.setItem('arf_'+k,old);
-      localStorage.removeItem('arf_'+k);
+      /* fix auditoria: não apagar arf_period/arf_url/arf_key */
     });
     localStorage.removeItem('arf_db_v1');      // dados demo antigos (nomes legados)
     localStorage.removeItem('arf_setup_done');
@@ -144,6 +144,20 @@ const Auth = {
     this._resetUI();
   },
 
+  showNewPasswordForm() {
+    UI.openModal({title:'🔑 Definir nova senha',size:'max-w-sm',
+      body:`<div class="space-y-3"><div><label class="brand-label">Nova senha (mín. 8)</label><input id="np-1" type="password" autocomplete="new-password" class="brand-input"/></div><div><label class="brand-label">Confirmar</label><input id="np-2" type="password" autocomplete="new-password" class="brand-input"/></div></div>`,
+      footer:`<button onclick="Auth.saveNewPassword()" class="brand-btn bg-brand-800 text-white hover:bg-brand-700">Salvar senha</button>`});
+  },
+  async saveNewPassword() {
+    const a = document.getElementById('np-1')?.value || '', b = document.getElementById('np-2')?.value || '';
+    if (a.length < 8) { UI.toast('Mínimo de 8 caracteres', 'warning'); return; }
+    if (a !== b) { UI.toast('As senhas não conferem', 'warning'); return; }
+    const { error } = await sbClient.auth.updateUser({ password: a });
+    if (error) { UI.toast(error.message, 'error'); return; }
+    UI.closeModal(); UI.toast('✅ Senha atualizada', 'success');
+  },
+
   togglePasswordVisibility() {
     const inp = document.getElementById('login-password');
     if (inp) inp.type = inp.type === 'password' ? 'text' : 'password';
@@ -162,6 +176,7 @@ const Auth = {
 if (sbClient) {
   // Sessão expirada / logout em outra aba
   sbClient.auth.onAuthStateChange(event => {
+    if (event === 'PASSWORD_RECOVERY') setTimeout(() => Auth.showNewPasswordForm(), 800);
     if (event === 'SIGNED_OUT' && !S.demoMode) {
       S.demoMode = true; S.user = null; S.sbClient = null;
       Auth._resetUI();
@@ -246,13 +261,13 @@ const DB={
   _save(d){try{localStorage.setItem(this.KEY,JSON.stringify(d));}catch(e){console.error('[ARF] localStorage cheio?',e);UI.toast('Não foi possível salvar localmente.','error');}},
   init(){let d=this._data();if(!d){d=JSON.parse(JSON.stringify(SEED_DATA));this._save(d);}return d;},
   _err(error,ctx){
-    const denied=error?.code==='42501'||/row-level security|permission denied/i.test(error?.message||'');
-    const e=new Error(denied?'Permissão negada para esta operação.':`${ctx}: ${error?.message||error}`);
+    const _m=error?.message||String(error);const denied=/row-level security|permission denied/i.test(_m);
+    const e=new Error(denied?'Permissão negada para esta operação.':error?.code==='23505'?'Registro duplicado: já existe um item com esses dados.':error?.code==='23514'?'Valor inválido: viola uma regra de integridade do banco.':error?.code==='23503'?'Operação bloqueada: existem registros vinculados.':`${ctx}: ${_m}`);
     e.cause=error;console.error('[ARF]',ctx,error);return e;
   },
   async get(t){
     if(S.demoMode){const d=this._data()||this.init();return{data:d[t]||[],error:null};}
-    const{data,error}=await S.sbClient.from(t).select('*');
+    let data=[],error=null;for(let from=0;;from+=1000){const r=await S.sbClient.from(t).select('*').order('id').range(from,from+999);if(r.error){error=r.error;break;}data=data.concat(r.data||[]);if(!r.data||r.data.length<1000)break;}
     if(error)throw this._err(error,`Carregar ${t}`);
     return{data:data||[],error:null};
   },
@@ -284,6 +299,13 @@ const DB={
   computeNote(n){const tx=round2((n.iss_withheld||0)+(n.irrf_withheld||0)+(n.pis_withheld||0)+(n.cofins_withheld||0)+(n.csll_withheld||0)+(n.inss_withheld||0));return{...n,tax_withheld:tx,net_amount:round2((n.gross_amount||0)-tx)};}
 };
 
+const Favs={
+  _k(){return 'arf_favs_'+(S.user?.id||'demo');},
+  get(){try{const a=JSON.parse(localStorage.getItem(this._k())||'[]');return Array.isArray(a)?a:[];}catch{return[];}},
+  has(id){return this.get().includes(id);},
+  toggle(id){const a=this.get();const i=a.indexOf(id);if(i>=0)a.splice(i,1);else a.push(id);try{localStorage.setItem(this._k(),JSON.stringify(a));}catch{}return i<0;}
+};
+
 const RBAC={
   rules:{
     admin:{canApprove:true,canCreateNote:true,canManageUsers:true,canViewReports:true,canManageBanks:true,canSendPend:true,canManageAssets:true,canUseCnpj:true,canDelete:true},
@@ -293,7 +315,7 @@ const RBAC={
     caixa:{canApprove:false,canCreateNote:true,canManageUsers:false,canViewReports:false,canManageBanks:false,canSendPend:false,canManageAssets:false,canUseCnpj:false,canDelete:false},
     demo:{canApprove:true,canCreateNote:true,canManageUsers:true,canViewReports:true,canManageBanks:true,canSendPend:true,canManageAssets:true,canUseCnpj:true,canDelete:true},
   },
-  can(p){return !!(this.rules[S.user?.role]?.[p]);}
+  can(p){if(p==='canManageStores')return ['admin','tesoureiro','contador','demo'].includes(S.user?.role);return !!(this.rules[S.user?.role]?.[p]);}
 };
 
 const Fmt={
@@ -303,7 +325,7 @@ const Fmt={
   date(iso){if(!iso)return'–';const d=new Date(String(iso).length<=10?iso+'T12:00:00':iso);return isNaN(d)?iso:d.toLocaleDateString('pt-BR');},
   datetime(iso){if(!iso)return'–';const d=new Date(iso);return isNaN(d)?iso:d.toLocaleString('pt-BR');},
   period(ym){if(!ym)return'–';const[y,m]=(ym||'').split('-');const ms=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];return`${ms[parseInt(m)-1]||'?'}/${y}`;},
-  cnpj(v){if(!v)return'–';const d=v.replace(/\D/g,'');if(d.length===11)return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4');if(d.length===14)return d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,'$1.$2.$3/$4-$5');return v;},
+  cnpj(v){if(!v)return'–';const d=v.replace(/\D/g,'');if(d.length===11)return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4');if(d.length===14)return d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,'$1.$2.$3/$4-$5');return String(v).replace(/[<>&"']/g,'');},
   initials(n){return(n||'').split(' ').filter(Boolean).slice(0,2).map(p=>p[0]).join('').toUpperCase();}
 };
 
@@ -331,13 +353,14 @@ const FiscalEngine={
     ${rows.map(([n,rate,v])=>`<tr><td class="py-0.5 text-slate-600">${n}</td><td class="py-0.5 text-right text-slate-400 pr-4">${Fmt.pct(rate)}</td><td class="py-0.5 text-right text-red-600 font-medium">– ${Fmt.money(v)}</td></tr>`).join('')}
     <tr class="border-t border-slate-300"><td class="pt-2 font-bold text-red-700">Total Retido</td><td></td><td class="pt-2 text-right font-bold text-red-700">– ${Fmt.money(c.tax_withheld)}</td></tr>
     <tr><td class="py-1 font-bold text-emerald-700 text-base">Valor Líquido a Pagar</td><td></td><td class="py-1 text-right font-black text-emerald-700 text-lg">${Fmt.money(c.net_amount)}</td></tr>
-    </table><p class="text-xs text-slate-400 mt-2">${c.note}</p></div>`;
+    </table><p class="text-xs text-slate-400 mt-2">${c.note||''}</p></div>`;
   }
 };
 
 const PixEngine={
+  normalizeKey(t,k){k=String(k||'').trim();if(t==='cpf'||t==='cnpj')return k.replace(/\D/g,'');if(t==='telefone'){const d=k.replace(/\D/g,'');return k.startsWith('+')?'+'+d:'+'+((d.startsWith('55')&&d.length>=12)?d:'55'+d);}if(t==='email')return k.toLowerCase();return k;},
   calcCRC16(str){const bytes=new TextEncoder().encode(str);let crc=0xFFFF;for(const b of bytes){crc^=b<<8;for(let i=0;i<8;i++){crc=(crc&0x8000)?((crc<<1)^0x1021):(crc<<1);crc&=0xFFFF;}}return crc.toString(16).toUpperCase().padStart(4,'0');},
-  f(id,val){const v=String(val);return`${id}${String(v.length).padStart(2,'0')}${v}`;},
+  f(id,val){const v=String(val);return`${id}${String(new TextEncoder().encode(v).length).padStart(2,'0')}${v}`;},
   generateTxId(noteId=''){const h=(noteId||'').replace(/[^a-zA-Z0-9]/g,'').substring(0,14).toUpperCase();const ts=Date.now().toString(36).toUpperCase().padStart(8,'0');return`ARF${h}${ts}`.substring(0,25);},
   generate({pixKey,name,city='BRASILIA',amount,txId,description=''}){
     const clean=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9 ]/g,'');
@@ -345,7 +368,7 @@ const PixEngine={
     const mC=clean(city).toUpperCase().substring(0,15)||'BRASILIA';
     const amt=Number(amount).toFixed(2);
     const tx=(txId||'***').replace(/[^a-zA-Z0-9]/g,'').substring(0,25);
-    const maiC=this.f('00','BR.GOV.BCB.PIX')+this.f('01',pixKey)+(description?this.f('02',description.substring(0,40)):'');
+    const maiC=this.f('00','BR.GOV.BCB.PIX')+this.f('01',pixKey)+(description?this.f('02',clean(description).substring(0,40)):'');
     const mai=this.f('26',maiC);const add=this.f('62',this.f('05',tx));
     const body='000201'+mai+'52040000'+'5303986'+this.f('54',amt)+'5802BR'+this.f('59',mN)+this.f('60',mC)+add+'6304';
     return body+this.calcCRC16(body);
@@ -389,14 +412,14 @@ const UI={
 // ═══════════ MODULE: DASHBOARD ═══════════
 const ModDashboard={
   async render(){
-    const{data:notes}=await DB.get('notes_fiscal');const{data:projects}=await DB.get('projects');const{data:pendencies}=await DB.get('internal_pendencies');
+    const[{data:notes},{data:projects},{data:pendencies}]=await Promise.all([DB.get('notes_fiscal'),DB.get('projects'),DB.get('internal_pendencies')]);
     const p=S.period;const pd=p?p+'-01':null;
     const actProj=projects.filter(x=>x.status==='ativo').length;
     const nfPend=notes.filter(n=>n.status==='pendente').length;const nfAprov=notes.filter(n=>n.status==='aprovada').length;
     const pendAb=pendencies.filter(x=>x.status==='aberta'||x.status==='em_analise').length;
-    const totLiq=notes.filter(n=>pd&&n.competency_period===pd&&n.status!=='cancelada').reduce((a,n)=>a+DB.computeNote(n).net_amount,0);
+    const totLiq=notes.filter(n=>pd&&n.competency_period===pd&&['pendente','aprovada','pix_gerado','divergencia'].includes(n.status)).reduce((a,n)=>a+DB.computeNote(n).net_amount,0);
     const totPago=notes.filter(n=>n.status==='pago_conciliado').reduce((a,n)=>a+(n.paid_amount||0),0);
-    const totRet=notes.reduce((a,n)=>a+DB.computeNote(n).tax_withheld,0);
+    const totRet=notes.filter(n=>n.status!=='cancelada').reduce((a,n)=>a+DB.computeNote(n).tax_withheld,0);
     const recent=[...notes].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,5).map(n=>DB.computeNote(n));
     const recentP=[...pendencies].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,4);
     UI.render(`<div class="p-6 space-y-6 fade-in">
@@ -432,7 +455,7 @@ const ModDashboard={
 const ModProjetos={
   async render(){
     const{data:projects}=await DB.get('projects');const{data:notes}=await DB.get('notes_fiscal');const{data:banks}=await DB.get('bank_accounts');
-    UI.render(`<div class="p-6 fade-in"><div class="flex items-center justify-between mb-5 flex-wrap gap-3"><div><h1 class="text-xl font-bold text-slate-800">Lojas</h1><p class="text-sm text-slate-500 mt-0.5">${projects.length} loja(s)</p></div>${RBAC.can('canCreateNote')?`<button onclick="ModProjetos.openNew()" class="brand-btn bg-brand-800 text-white hover:bg-brand-700 shadow-sm">+ Nova Loja</button>`:''}</div>
+    UI.render(`<div class="p-6 fade-in"><div class="flex items-center justify-between mb-5 flex-wrap gap-3"><div><h1 class="text-xl font-bold text-slate-800">Lojas</h1><p class="text-sm text-slate-500 mt-0.5">${projects.length} loja(s)</p></div>${RBAC.can('canManageStores')?`<button onclick="ModProjetos.openNew()" class="brand-btn bg-brand-800 text-white hover:bg-brand-700 shadow-sm">+ Nova Loja</button>`:''}</div>
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">${projects.map(p=>this.cardHtml(p,notes,banks)).join('')}</div></div>`);
   },
   cardHtml(p,allN,allB){
@@ -441,11 +464,11 @@ const ModProjetos={
     const sc={ativo:'bg-emerald-100 text-emerald-700',encerrado:'bg-slate-100 text-slate-500',suspenso:'bg-amber-100 text-amber-700'};
     return`<div class="bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md transition-shadow cursor-pointer" onclick="ModProjetos.openDetail('${p.id}')">
       <div class="flex items-start justify-between mb-3"><div class="flex-1 min-w-0 pr-2"><div class="flex items-center gap-1.5 mb-1.5 flex-wrap"><span class="text-xs px-2 py-0.5 rounded-full font-semibold ${p.type==='Livre'?'bg-blue-100 text-blue-700':'bg-purple-100 text-purple-700'}">${esc(p.type)}</span><span class="text-xs px-2 py-0.5 rounded-full font-semibold ${sc[p.status]}">${p.status}</span></div><h3 class="font-bold text-slate-800 text-sm leading-snug">${esc(p.name)}</h3>${p.code?`<p class="text-xs text-slate-400 mt-0.5">${esc(p.code)}</p>`:''}</div>
-      <button class="text-xl flex-shrink-0 ${p.is_favorite?'text-amber-400':'text-slate-200 hover:text-amber-400'} transition-colors" onclick="event.stopPropagation();ModProjetos.toggleFav('${p.id}',${!p.is_favorite})">★</button></div>
+      <button class="text-xl flex-shrink-0 ${Favs.has(p.id)?'text-amber-400':'text-slate-200 hover:text-amber-400'} transition-colors" onclick="event.stopPropagation();ModProjetos.toggleFav('${p.id}')">★</button></div>
       <div class="space-y-1.5 mb-4"><div class="flex justify-between text-xs text-slate-500"><span>Orçamento</span><span class="font-semibold text-slate-700">${Fmt.money(p.budget)}</span></div><div class="h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="h-full rounded-full ${pct>90?'bg-red-500':pct>70?'bg-amber-500':'bg-emerald-500'}" style="width:${pct}%"></div></div><div class="flex justify-between text-xs"><span class="text-slate-500">Gasto: <b class="text-slate-700">${Fmt.money(p.spent)}</b></span><span class="${pct>90?'text-red-600':'text-slate-400'}">${Fmt.pct(pct)}</span></div></div>
       <div class="flex items-center justify-between pt-3 border-t border-slate-100 text-xs text-slate-500"><span>🏛️ ${bc}</span><span>🧾 ${nc}</span><span>${p.start_date?Fmt.date(p.start_date):'–'}</span></div></div>`;
   },
-  async toggleFav(id,val){await DB.update('projects',id,{is_favorite:val});App.updateFavoritesList();await this.render();UI.toast(val?'⭐ Favorito adicionado':'Favorito removido',val?'success':'info');},
+  async toggleFav(id){const on=Favs.toggle(id);App.updateFavoritesList();await this.render();UI.toast(on?'⭐ Favorito adicionado':'Favorito removido',on?'success':'info');},
   async openNew(){
     UI.openModal({title:'+ Nova Loja',size:'max-w-lg',body:`<div class="space-y-4">
       <div><label class="brand-label">Nome *</label><input id="prj-name" class="brand-input" placeholder="Ex: Loja Shopping Norte" /></div>
@@ -469,7 +492,7 @@ const ModProjetos={
     UI.closeModal();UI.toast('✅ Loja criada!','success');await this.render();App.updateFavoritesList();
   },
   async openEdit(id){
-    if(!RBAC.can('canApprove')){UI.toast('Sem permissão','error');return;}
+    if(!RBAC.can('canManageStores')){UI.toast('Sem permissão','error');return;}
     const{data:p}=await DB.getById('projects',id);if(!p)return;
     const opt=(v,l,cur)=>`<option value="${v}" ${v===cur?'selected':''}>${l}</option>`;
     UI.openModal({title:`Editar — ${p.name}`,size:'max-w-lg',body:`<div class="space-y-4">
@@ -479,7 +502,7 @@ const ModProjetos={
         <div><label class="brand-label">Código</label><input id="pe-code" class="brand-input" value="${esc(p.code||'')}" /></div>
         <div><label class="brand-label">Tipo</label><select id="pe-type" class="brand-input">${opt('Livre','Livre',p.type)}${opt('Restrito','Restrito',p.type)}</select></div>
         <div><label class="brand-label">Orçamento (R$) *</label><input id="pe-budget" type="number" min="0" step="0.01" class="brand-input" value="${esc(p.budget)}" /></div>
-        <div><label class="brand-label">Gasto (R$)</label><input id="pe-spent" type="number" min="0" step="0.01" class="brand-input" value="${esc(p.spent||0)}" /></div>
+        <div><label class="brand-label">Gasto (R$)</label><input id="pe-spent" type="number" min="0" step="0.01" class="brand-input" value="${esc(p.spent||0)}" ${S.demoMode?'':'disabled title="Calculado automaticamente a partir das NFs pagas"'} /></div>
         <div><label class="brand-label">Status</label><select id="pe-status" class="brand-input">${opt('ativo','Ativo',p.status)}${opt('suspenso','Suspenso',p.status)}${opt('encerrado','Encerrado',p.status)}</select></div>
         <div><label class="brand-label">Início</label><input id="pe-start" type="date" class="brand-input" value="${esc(p.start_date||'')}" /></div>
         <div><label class="brand-label">Término</label><input id="pe-end" type="date" class="brand-input" value="${esc(p.end_date||'')}" /></div>
@@ -492,7 +515,7 @@ const ModProjetos={
     if(isNaN(budget)||budget<=0){UI.toast('Orçamento inválido','warning');return;}
     const cnpjE=CnpjTool.digits(g('pe-cnpj'));
     if(cnpjE&&!CnpjTool.valid(cnpjE)){UI.toast('CNPJ inválido (verifique os dígitos)','warning');return;}
-    await DB.update('projects',id,{name:g('pe-name'),cnpj:cnpjE||null,code:g('pe-code')||null,type:g('pe-type'),budget,spent:parseFloat(g('pe-spent'))||0,status:g('pe-status'),start_date:g('pe-start')||null,end_date:g('pe-end')||null,notes:g('pe-notes')||null});
+    await DB.update('projects',id,{name:g('pe-name'),cnpj:cnpjE||null,code:g('pe-code')||null,type:g('pe-type'),budget,...(S.demoMode?{spent:parseFloat(g('pe-spent'))||0}:{}),status:g('pe-status'),start_date:g('pe-start')||null,end_date:g('pe-end')||null,notes:g('pe-notes')||null});
     UI.closeModal();UI.toast('✅ Loja atualizada','success');App.updateFavoritesList();
     if(S.module==='projetos'||S.module==='relatorio-projetos')await this.render();
   },
@@ -528,7 +551,7 @@ const ModProjetos={
       <div><p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Contas Bancárias (${pb.length})</p>${pb.length===0?`<p class="text-sm text-slate-400 italic">Sem contas.</p>`:pb.map(b=>`<div class="flex items-center gap-3 px-3 py-2.5 bg-slate-50 rounded-lg mb-2 border border-slate-200"><span class="text-lg">🏛️</span><div class="flex-1 min-w-0"><p class="text-sm font-semibold">${esc(b.bank_name)} — Ag. ${esc(b.agency)} · C/C ${esc(b.account_number)}</p><p class="text-xs text-slate-400 font-mono">Pix: ${esc(b.pix_key)}</p></div></div>`).join('')}</div>
       <div><p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Notas Fiscais (${pn.length})</p>${pn.length===0?`<p class="text-sm text-slate-400 italic">Nenhuma.</p>`:`<table class="brand-table"><thead><tr><th>Emitente</th><th class="text-right">Líquido</th><th>Status</th></tr></thead><tbody>${pn.slice(0,6).map(n=>`<tr><td class="text-sm">${esc(n.emitter_name)}</td><td class="text-right font-mono text-emerald-700">${Fmt.money(n.net_amount)}</td><td>${UI.badge(n.status)}</td></tr>`).join('')}</tbody></table>`}</div>
       ${p.notes?`<div class="bg-slate-50 rounded-lg p-3 border"><p class="text-xs font-semibold text-slate-500 mb-1">Obs.</p><p class="text-sm text-slate-600">${esc(p.notes)}</p></div>`:''}
-    </div>`,footer:`${RBAC.can('canDelete')?`<button onclick="ModProjetos.remove('${esc(id)}')" class="brand-btn border border-red-300 text-red-600 hover:bg-red-50">🗑️ Excluir</button>`:''}${RBAC.can('canApprove')?`<button onclick="ModProjetos.openEdit('${id}')" class="brand-btn border border-slate-300 text-slate-600 hover:bg-slate-50">✏️ Editar</button>`:''}${RBAC.can('canManageBanks')?`<button onclick="ModContasBancarias.openNew('${id}');UI.closeModal()" class="brand-btn border border-slate-300 text-slate-600 hover:bg-slate-50 mr-auto">+ Conta Bancária</button>`:''}<button onclick="UI.closeModal()" class="brand-btn border border-slate-300 text-slate-600 hover:bg-slate-50">Fechar</button>${RBAC.can('canCreateNote')?`<button onclick="ModNotasFiscais.openNew('${id}');UI.closeModal()" class="brand-btn bg-brand-800 text-white hover:bg-brand-700">+ Nova NF</button>`:''}`});
+    </div>`,footer:`${RBAC.can('canDelete')?`<button onclick="ModProjetos.remove('${esc(id)}')" class="brand-btn border border-red-300 text-red-600 hover:bg-red-50">🗑️ Excluir</button>`:''}${RBAC.can('canManageStores')?`<button onclick="ModProjetos.openEdit('${id}')" class="brand-btn border border-slate-300 text-slate-600 hover:bg-slate-50">✏️ Editar</button>`:''}${RBAC.can('canManageBanks')?`<button onclick="ModContasBancarias.openNew('${id}');UI.closeModal()" class="brand-btn border border-slate-300 text-slate-600 hover:bg-slate-50 mr-auto">+ Conta Bancária</button>`:''}<button onclick="UI.closeModal()" class="brand-btn border border-slate-300 text-slate-600 hover:bg-slate-50">Fechar</button>${RBAC.can('canCreateNote')?`<button onclick="ModNotasFiscais.openNew('${id}');UI.closeModal()" class="brand-btn bg-brand-800 text-white hover:bg-brand-700">+ Nova NF</button>`:''}`});
   }
 };
 
@@ -538,7 +561,7 @@ const ModContasBancarias={
     const{data:banks}=await DB.get('bank_accounts');const{data:projects}=await DB.get('projects');
     const grouped=projects.map(p=>({project:p,banks:banks.filter(b=>b.project_id===p.id)})).filter(g=>g.banks.length>0);
     UI.render(`<div class="p-6 fade-in"><div class="flex items-center justify-between mb-5 flex-wrap gap-3"><div><h1 class="text-xl font-bold text-slate-800">Contas Bancárias</h1><p class="text-sm text-slate-500">${banks.length} conta(s)</p></div>${RBAC.can('canManageBanks')?`<button onclick="ModContasBancarias.openNew()" class="brand-btn bg-brand-800 text-white hover:bg-brand-700 shadow-sm">+ Nova Conta</button>`:''}</div>
-    <div class="space-y-4">${grouped.length===0?UI.empty('Nenhuma conta cadastrada'):grouped.map(g=>`<div class="bg-white rounded-xl border border-slate-200 overflow-hidden"><div class="px-5 py-3 bg-slate-50 border-b border-slate-200 flex items-center gap-2"><span class="text-xs px-2 py-0.5 rounded-full font-semibold ${g.project.type==='Livre'?'bg-blue-100 text-blue-700':'bg-purple-100 text-purple-700'}">${esc(g.project.type)}</span><span class="font-bold text-slate-700 text-sm">${esc(g.project.name)}</span></div>${g.banks.map(b=>`<div class="px-5 py-4 flex items-center gap-4 border-b border-slate-100 last:border-0"><div class="w-10 h-10 bg-brand-100 rounded-lg flex items-center justify-center text-lg flex-shrink-0">🏛️</div><div class="flex-1 min-w-0"><p class="font-semibold text-slate-800 text-sm">${esc(b.bank_name)}${b.bank_code?' ('+b.bank_code+')':''}</p><p class="text-xs text-slate-500">Ag. ${esc(b.agency)} · C/C ${esc(b.account_number)}${b.account_digit?'-'+b.account_digit:''}</p><p class="text-xs text-slate-400">Benef.: ${esc(b.beneficiary_name)}</p></div><div class="text-right"><p class="text-xs font-semibold text-slate-500 mb-1">Pix (${PIX_KEY_LABELS[b.pix_key_type]})</p><p class="text-xs font-mono bg-brand-50 text-brand-700 px-2 py-1 rounded border border-brand-200">${esc(b.pix_key)}</p></div>${RBAC.can('canManageBanks')?`<button onclick="ModContasBancarias.openEdit('${b.id}')" class="text-slate-400 hover:text-slate-600 p-1.5 rounded hover:bg-slate-100">✏️</button>`:''}</div>`).join('')}</div>`).join('')}</div></div>`);
+    <div class="space-y-4">${grouped.length===0?UI.empty('Nenhuma conta cadastrada'):grouped.map(g=>`<div class="bg-white rounded-xl border border-slate-200 overflow-hidden"><div class="px-5 py-3 bg-slate-50 border-b border-slate-200 flex items-center gap-2"><span class="text-xs px-2 py-0.5 rounded-full font-semibold ${g.project.type==='Livre'?'bg-blue-100 text-blue-700':'bg-purple-100 text-purple-700'}">${esc(g.project.type)}</span><span class="font-bold text-slate-700 text-sm">${esc(g.project.name)}</span></div>${g.banks.map(b=>`<div class="px-5 py-4 flex items-center gap-4 border-b border-slate-100 last:border-0"><div class="w-10 h-10 bg-brand-100 rounded-lg flex items-center justify-center text-lg flex-shrink-0">🏛️</div><div class="flex-1 min-w-0"><p class="font-semibold text-slate-800 text-sm">${esc(b.bank_name)}${b.bank_code?' ('+esc(b.bank_code)+')':''}</p><p class="text-xs text-slate-500">Ag. ${esc(b.agency)} · C/C ${esc(b.account_number)}${b.account_digit?'-'+esc(b.account_digit):''}</p><p class="text-xs text-slate-400">Benef.: ${esc(b.beneficiary_name)}</p></div><div class="text-right"><p class="text-xs font-semibold text-slate-500 mb-1">Pix (${PIX_KEY_LABELS[b.pix_key_type]})</p><p class="text-xs font-mono bg-brand-50 text-brand-700 px-2 py-1 rounded border border-brand-200">${esc(b.pix_key)}</p></div>${RBAC.can('canManageBanks')?`<button onclick="ModContasBancarias.openEdit('${b.id}')" class="text-slate-400 hover:text-slate-600 p-1.5 rounded hover:bg-slate-100">✏️</button>`:''}</div>`).join('')}</div>`).join('')}</div></div>`);
   },
   async openNew(preProj=''){
     const{data:projects}=await DB.get('projects');
@@ -584,7 +607,7 @@ const ModNotasFiscais={
     const{data:notes}=await DB.get('notes_fiscal');const{data:projects}=await DB.get('projects');
     const fil=notes.filter(n=>!S.period||n.competency_period?.startsWith(S.period)).map(n=>DB.computeNote(n)).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
     UI.render(`<div class="p-6 fade-in"><div class="flex items-center justify-between mb-5 flex-wrap gap-3"><div><h1 class="text-xl font-bold text-slate-800">Notas Fiscais</h1><p class="text-sm text-slate-500">${fil.length} nota(s) — ${Fmt.period(S.period)}</p></div>${RBAC.can('canCreateNote')?`<button onclick="ModNotasFiscais.openNew()" class="brand-btn bg-brand-800 text-white hover:bg-brand-700 shadow-sm">+ Nova Nota Fiscal</button>`:''}</div>
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">${[['Bruto',fil.reduce((a,n)=>a+n.gross_amount,0),'text-slate-700'],['Retido',fil.reduce((a,n)=>a+n.tax_withheld,0),'text-red-600'],['Líquido',fil.reduce((a,n)=>a+n.net_amount,0),'text-emerald-700'],['Pend. Pag.',fil.filter(n=>n.status==='pix_gerado'||n.status==='aprovada').reduce((a,n)=>a+n.net_amount,0),'text-amber-600']].map(([l,v,c])=>`<div class="bg-white rounded-lg border border-slate-200 px-4 py-3"><p class="text-xs text-slate-500 uppercase tracking-wide font-semibold">${l}</p><p class="font-bold ${c} mt-1 text-lg">${Fmt.money(v)}</p></div>`).join('')}</div>
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">${[['Bruto',fil.filter(n=>n.status!=='cancelada').reduce((a,n)=>a+n.gross_amount,0),'text-slate-700'],['Retido',fil.filter(n=>n.status!=='cancelada').reduce((a,n)=>a+n.tax_withheld,0),'text-red-600'],['Líquido',fil.filter(n=>n.status!=='cancelada').reduce((a,n)=>a+n.net_amount,0),'text-emerald-700'],['Pend. Pag.',fil.filter(n=>n.status==='pix_gerado'||n.status==='aprovada').reduce((a,n)=>a+n.net_amount,0),'text-amber-600']].map(([l,v,c])=>`<div class="bg-white rounded-lg border border-slate-200 px-4 py-3"><p class="text-xs text-slate-500 uppercase tracking-wide font-semibold">${l}</p><p class="font-bold ${c} mt-1 text-lg">${Fmt.money(v)}</p></div>`).join('')}</div>
     <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">${fil.length===0?UI.empty('Nenhuma nota no período','🧾'):`<div class="overflow-x-auto"><table class="brand-table"><thead><tr><th>NF / Emitente</th><th>Regime</th><th>Loja</th><th class="text-right">Bruto</th><th class="text-right">Retido</th><th class="text-right">Líquido</th><th>Status</th><th class="text-center">Ações</th></tr></thead><tbody>
     ${fil.map(n=>{const pr=projects.find(x=>x.id===n.project_id);return`<tr><td><p class="font-semibold text-slate-800 text-sm">${esc(n.emitter_name)}</p><p class="text-xs text-slate-400">${esc(n.fiscal_note_number||'–')} · ${Fmt.date(n.issue_date)}</p></td><td><span class="text-xs bg-slate-100 px-2 py-0.5 rounded font-medium text-slate-600">${EMITTER_LABELS[n.emitter_type]||n.emitter_type}</span></td><td class="text-xs text-slate-500 max-w-[120px] truncate">${esc(pr?.name||'–')}</td><td class="text-right font-mono text-sm">${Fmt.money(n.gross_amount)}</td><td class="text-right font-mono text-sm text-red-600">–${Fmt.money(n.tax_withheld)}</td><td class="text-right font-mono text-sm font-bold text-emerald-700">${Fmt.money(n.net_amount)}</td><td>${UI.badge(n.status)}</td><td class="text-center"><div class="flex items-center justify-center gap-1"><button onclick="ModNotasFiscais.openDetail('${n.id}')" class="text-xs px-2 py-1 rounded text-slate-600 hover:bg-slate-100" title="Detalhes">👁️</button>${n.status==='pendente'&&RBAC.can('canApprove')?`<button onclick="ModNotasFiscais.approve('${n.id}')" class="text-xs px-2 py-1 rounded text-emerald-700 hover:bg-emerald-50" title="Aprovar">✅</button>`:''}${n.status==='aprovada'&&RBAC.can('canApprove')?`<button onclick="ModNotasFiscais.generatePix('${n.id}')" class="text-xs px-2 py-1 rounded text-blue-700 hover:bg-blue-50" title="Gerar Pix">🏦</button>`:''}${n.status==='pix_gerado'?`<button onclick="ModNotasFiscais.openPixModal('${n.id}')" class="text-xs px-2 py-1 rounded text-indigo-700 hover:bg-indigo-50" title="Ver Pix">📱</button>`:''}</div></td></tr>`;}).join('')}
     </tbody></table></div>`}</div></div>`);
@@ -623,8 +646,13 @@ const ModNotasFiscais={
   async saveNew(){
     const g=id=>document.getElementById(id)?.value.trim();const gross=parseFloat(document.getElementById('nf-gross')?.value||0);
     if(!g('nf-emitter')||!g('nf-cnpj')||!gross||!g('nf-project')||!g('nf-period')){UI.toast('Preencha todos os campos obrigatórios','warning');return;}
+    if(!S.demoMode){const _d=(g('nf-cnpj')||'').replace(/\D/g,'');const _cpf=x=>{if(x.length!==11||/^(\d)\1+$/.test(x))return false;const c=n=>{let s=0;for(let i=0;i<n;i++)s+=x[i]*(n+1-i);const r=s*10%11;return r===10?0:r;};return c(9)==x[9]&&c(10)==x[10];};if(!(_d.length===14?CnpjTool.valid(_d):_cpf(_d))){UI.toast('CPF/CNPJ do emitente inválido','warning');return;}}
+    if(this._busy)return;
+    const _num=g('nf-num');
+    if(_num){const{data:_all}=await DB.get('notes_fiscal');const _dg=(g('nf-cnpj')||'').replace(/\D/g,'');
+      if(_all.some(x=>x.status!=='cancelada'&&String(x.emitter_cnpj||'').replace(/\D/g,'')===_dg&&String(x.fiscal_note_number||'').trim().toLowerCase()===_num.toLowerCase())){UI.toast('Esta nota (mesmo emitente e número) já foi lançada.','warning',6000);return;}}
     const calc=FiscalEngine.calculate(document.getElementById('nf-type')?.value,gross);
-    await DB.insert('notes_fiscal',{project_id:g('nf-project'),bank_account_id:g('nf-bank')||null,emitter_name:g('nf-emitter'),emitter_cnpj:g('nf-cnpj'),emitter_type:document.getElementById('nf-type')?.value,service_description:g('nf-desc'),fiscal_note_number:g('nf-num'),issue_date:g('nf-issue')||null,due_date:g('nf-due')||null,gross_amount:calc.gross_amount,iss_rate:calc.iss_rate,iss_withheld:calc.iss_withheld,irrf_rate:calc.irrf_rate,irrf_withheld:calc.irrf_withheld,pis_rate:calc.pis_rate,pis_withheld:calc.pis_withheld,cofins_rate:calc.cofins_rate,cofins_withheld:calc.cofins_withheld,csll_rate:calc.csll_rate,csll_withheld:calc.csll_withheld,inss_rate:calc.inss_rate,inss_withheld:calc.inss_withheld,competency_period:g('nf-period')+'-01',status:'pendente',created_by:S.user.id});
+    this._busy=true;try{await DB.insert('notes_fiscal',{project_id:g('nf-project'),bank_account_id:g('nf-bank')||null,emitter_name:g('nf-emitter'),emitter_cnpj:g('nf-cnpj'),emitter_type:document.getElementById('nf-type')?.value,service_description:g('nf-desc'),fiscal_note_number:g('nf-num'),issue_date:g('nf-issue')||null,due_date:g('nf-due')||null,gross_amount:calc.gross_amount,iss_rate:calc.iss_rate,iss_withheld:calc.iss_withheld,irrf_rate:calc.irrf_rate,irrf_withheld:calc.irrf_withheld,pis_rate:calc.pis_rate,pis_withheld:calc.pis_withheld,cofins_rate:calc.cofins_rate,cofins_withheld:calc.cofins_withheld,csll_rate:calc.csll_rate,csll_withheld:calc.csll_withheld,inss_rate:calc.inss_rate,inss_withheld:calc.inss_withheld,competency_period:g('nf-period')+'-01',status:'pendente',created_by:S.user.id});}finally{this._busy=false;}
     UI.closeModal();UI.toast('✅ Nota lançada! Aguarda aprovação.','success');App.updateBadges();
     if(S.module==='notas-fiscais')await this.render();else await ModDashboard.render();
   },
@@ -638,11 +666,12 @@ const ModNotasFiscais={
   },
   async generatePix(id){
     const{data:note}=await DB.getById('notes_fiscal',id);if(!note)return;const n=DB.computeNote(note);
+    if(!(n.net_amount>0)){UI.toast('Valor líquido zerado: não há o que pagar via Pix.','error');return;}
     let bank=null;if(n.bank_account_id){const{data:b}=await DB.getById('bank_accounts',n.bank_account_id);bank=b;}
     if(!bank){const{data:banks}=await DB.get('bank_accounts');bank=banks.find(b=>b.project_id===n.project_id&&b.is_active);}
     if(!bank){UI.toast('Nenhuma conta bancária vinculada','error');return;}
     const txId=PixEngine.generateTxId(id);
-    const payload=PixEngine.generate({pixKey:bank.pix_key,name:bank.beneficiary_name,city:'BRASILIA',amount:n.net_amount,txId,description:`NF ${n.fiscal_note_number||id.substring(0,8)}`});
+    const payload=PixEngine.generate({pixKey:PixEngine.normalizeKey(bank.pix_key_type,bank.pix_key),name:bank.beneficiary_name,city:'BRASILIA',amount:n.net_amount,txId,description:`NF ${n.fiscal_note_number||id.substring(0,8)}`});
     await DB.update('notes_fiscal',id,{tx_id:txId,pix_payload:payload,status:'pix_gerado'});
     UI.toast('🔷 Pix gerado!','success');
     if(S.module==='notas-fiscais')await this.render();if(S.module==='pix')await ModPix.render();
@@ -667,17 +696,36 @@ const ModNotasFiscais={
     await DB.update('notes_fiscal',id,{status:'divergencia',divergence_reason:r});
     UI.closeModal();UI.toast('Divergência registrada','info');App.updateBadges();await this._refresh();
   },
+  reopenPix(id){
+    if(!RBAC.can('canApprove')){UI.toast('Sem permissão','error');return;}
+    UI.confirm('Voltar esta nota para “Pix gerado”?',async()=>{
+      await DB.update('notes_fiscal',id,{status:'pix_gerado',divergence_reason:null});
+      UI.closeModal();UI.toast('Nota reaberta como Pix gerado','info');App.updateBadges();await this._refresh();
+    });
+  },
+  async settleDivergence(id){
+    if(!RBAC.can('canApprove')){UI.toast('Sem permissão','error');return;}
+    const{data:note}=await DB.getById('notes_fiscal',id);if(!note)return;const n=DB.computeNote(note);
+    UI.openModal({title:'✅ Registrar pagamento (divergência)',size:'max-w-md',body:`<div class="space-y-3"><p class="text-sm text-slate-600">Líquido esperado: <b>${Fmt.money(n.net_amount)}</b></p><div><label class="brand-label">Valor efetivamente pago (R$) *</label><input id="dv-paid" type="number" min="0.01" step="0.01" class="brand-input" value="${esc(n.net_amount)}"/></div></div>`,
+      footer:`<button onclick="UI.closeModal()" class="brand-btn border border-slate-300 text-slate-600 hover:bg-slate-50">Cancelar</button><button onclick="ModNotasFiscais.saveSettleDivergence('${esc(id)}')" class="brand-btn bg-emerald-600 text-white hover:bg-emerald-700">Registrar</button>`});
+  },
+  async saveSettleDivergence(id){
+    const v=parseFloat(document.getElementById('dv-paid')?.value);
+    if(!(v>0)){UI.toast('Informe um valor pago válido','warning');return;}
+    await DB.update('notes_fiscal',id,{status:'pago_conciliado',paid_amount:round2(v),paid_at:new Date().toISOString()});
+    UI.closeModal();UI.toast('💚 Pagamento registrado','success');App.updateBadges();await this._refresh();
+  },
   async openDetail(id){
     const{data:note}=await DB.getById('notes_fiscal',id);if(!note)return;const n=DB.computeNote(note);
     const{data:projects}=await DB.get('projects');const pr=projects.find(x=>x.id===n.project_id);
     UI.openModal({title:`🧾 ${n.emitter_name}`,size:'max-w-2xl',body:`<div class="space-y-4">
       <div class="flex items-center gap-3 flex-wrap">${UI.badge(n.status)}<span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">${EMITTER_LABELS[n.emitter_type]||n.emitter_type}</span><span class="text-xs text-slate-400">${Fmt.period(n.competency_period?.substring(0,7))}</span></div>
-      <div class="grid grid-cols-2 gap-4"><div><p class="brand-label">Emitente</p><p class="text-sm font-semibold">${esc(n.emitter_name)}</p></div><div><p class="brand-label">CPF/CNPJ</p><p class="text-sm">${Fmt.cnpj(n.emitter_cnpj)}</p></div><div><p class="brand-label">Serviço</p><p class="text-sm">${esc(n.service_description||'–')}</p></div><div><p class="brand-label">Loja</p><p class="text-sm">${esc(pr?.name||'–')}</p></div><div><p class="brand-label">Emissão</p><p class="text-sm">${Fmt.date(n.issue_date)}</p></div><div><p class="brand-label">Vencimento</p><p class="text-sm">${Fmt.date(n.due_date)}</p></div></div>
+      <div class="grid grid-cols-2 gap-4"><div><p class="brand-label">Emitente</p><p class="text-sm font-semibold">${esc(n.emitter_name)}</p></div><div><p class="brand-label">CPF/CNPJ</p><p class="text-sm">${esc(Fmt.cnpj(n.emitter_cnpj))}</p></div><div><p class="brand-label">Serviço</p><p class="text-sm">${esc(n.service_description||'–')}</p></div><div><p class="brand-label">Loja</p><p class="text-sm">${esc(pr?.name||'–')}</p></div><div><p class="brand-label">Emissão</p><p class="text-sm">${Fmt.date(n.issue_date)}</p></div><div><p class="brand-label">Vencimento</p><p class="text-sm">${Fmt.date(n.due_date)}</p></div></div>
       ${FiscalEngine.renderBreakdown(n)}
       ${n.tx_id?`<div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4"><p class="text-xs font-bold text-indigo-600 uppercase tracking-wide mb-1">TxId Pix</p><p class="font-mono text-xs text-indigo-800 break-all">${esc(n.tx_id)}</p></div>`:''}
       ${n.status==='pago_conciliado'?`<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center gap-3"><div class="w-3 h-3 bg-emerald-500 rounded-full pulse-conciliado flex-shrink-0"></div><div><p class="text-sm font-bold text-emerald-700">Pagamento Conciliado ✔</p><p class="text-xs text-emerald-600">Pago em ${Fmt.datetime(n.paid_at)} · ${Fmt.money(n.paid_amount)}</p></div></div>`:''}
       ${n.status==='divergencia'?`<div class="bg-red-50 border border-red-200 rounded-xl p-4"><p class="text-sm font-bold text-red-700">⚠️ Divergência</p><p class="text-xs text-red-600">${esc(n.divergence_reason||'Valor recebido difere do esperado')}</p></div>`:''}
-    </div>`,footer:`${['pendente','aprovada','pix_gerado','divergencia'].includes(n.status)&&RBAC.can('canApprove')?`<button onclick="ModNotasFiscais.cancel('${id}')" class="brand-btn border border-red-300 text-red-600 hover:bg-red-50 mr-auto">🚫 Cancelar NF</button>`:''}${n.status==='pix_gerado'&&RBAC.can('canApprove')?`<button onclick="ModNotasFiscais.divergence('${id}')" class="brand-btn border border-amber-300 text-amber-700 hover:bg-amber-50">⚠️ Divergência</button>`:''}${n.status==='pendente'&&RBAC.can('canApprove')?`<button onclick="ModNotasFiscais.approve('${id}');UI.closeModal()" class="brand-btn bg-emerald-600 text-white hover:bg-emerald-700">✅ Aprovar</button>`:''}${n.status==='aprovada'&&RBAC.can('canApprove')?`<button onclick="ModNotasFiscais.generatePix('${id}');UI.closeModal()" class="brand-btn bg-blue-600 text-white hover:bg-blue-700">🏦 Gerar Pix</button>`:''}${n.status==='pix_gerado'?`<button onclick="ModNotasFiscais.openPixModal('${id}');UI.closeModal()" class="brand-btn bg-indigo-600 text-white hover:bg-indigo-700">📱 Ver Pix</button>`:''}<button onclick="UI.closeModal()" class="brand-btn border border-slate-300 text-slate-600 hover:bg-slate-50">Fechar</button>`});
+    </div>`,footer:`${['pendente','aprovada','pix_gerado','divergencia'].includes(n.status)&&RBAC.can('canApprove')?`<button onclick="ModNotasFiscais.cancel('${id}')" class="brand-btn border border-red-300 text-red-600 hover:bg-red-50 mr-auto">🚫 Cancelar NF</button>`:''}${n.status==='pix_gerado'&&RBAC.can('canApprove')?`<button onclick="ModNotasFiscais.divergence('${id}')" class="brand-btn border border-amber-300 text-amber-700 hover:bg-amber-50">⚠️ Divergência</button>`:''}${n.status==='pendente'&&RBAC.can('canApprove')?`<button onclick="ModNotasFiscais.approve('${id}')" class="brand-btn bg-emerald-600 text-white hover:bg-emerald-700">✅ Aprovar</button>`:''}${n.status==='aprovada'&&RBAC.can('canApprove')?`<button onclick="ModNotasFiscais.generatePix('${id}');UI.closeModal()" class="brand-btn bg-blue-600 text-white hover:bg-blue-700">🏦 Gerar Pix</button>`:''}${n.status==='pix_gerado'?`<button onclick="ModNotasFiscais.openPixModal('${id}');UI.closeModal()" class="brand-btn bg-indigo-600 text-white hover:bg-indigo-700">📱 Ver Pix</button>`:''}${n.status==='divergencia'&&RBAC.can('canApprove')?`<button onclick="ModNotasFiscais.reopenPix('${id}')" class="brand-btn border border-slate-300 text-slate-600 hover:bg-slate-50">↩ Reabrir Pix</button><button onclick="ModNotasFiscais.settleDivergence('${id}')" class="brand-btn bg-emerald-600 text-white hover:bg-emerald-700">✅ Registrar pagamento</button>`:''}<button onclick="UI.closeModal()" class="brand-btn border border-slate-300 text-slate-600 hover:bg-slate-50">Fechar</button>`});
   },
   async openPixModal(id){
     const{data:note}=await DB.getById('notes_fiscal',id);if(!note)return;const n=DB.computeNote(note);
@@ -701,7 +749,7 @@ const ModPix={
     UI.render(`<div class="p-6 fade-in"><div class="mb-5"><h1 class="text-xl font-bold text-slate-800">Pix & Pagamentos</h1><p class="text-sm text-slate-500">${payable.length} nota(s) aguardando · ${Fmt.money(payable.reduce((a,n)=>a+n.net_amount,0))} a pagar</p></div>
     <div class="bg-white rounded-xl border border-slate-200 mb-5 overflow-hidden">
       <div class="px-5 py-4 border-b border-slate-100 bg-amber-50 flex items-center gap-2"><span>⏳</span><h2 class="font-bold text-slate-700 text-sm">Aguardando Pagamento</h2><span class="text-xs text-amber-700 bg-amber-200 rounded-full px-2 py-0.5 font-semibold">${payable.length}</span></div>
-      ${payable.length===0?UI.empty('Nenhuma nota aguardando','✅'):`<div class="divide-y divide-slate-100">${payable.map(n=>{const pr=projects.find(x=>x.id===n.project_id);const ov=n.due_date&&new Date(n.due_date)<new Date();return`<div class="px-5 py-4 flex items-center gap-4 hover:bg-slate-50"><div class="flex-1 min-w-0"><div class="flex items-center gap-2 mb-1 flex-wrap">${UI.badge(n.status)}${ov?'<span class="badge bg-red-100 text-red-700">⚠️ Vencida</span>':''}</div><p class="font-semibold text-slate-800 text-sm">${esc(n.emitter_name)}</p><p class="text-xs text-slate-400">${esc(pr?.name||'–')} · NF ${esc(n.fiscal_note_number||'–')} · Vence ${Fmt.date(n.due_date)}</p></div><div class="text-right mr-3"><p class="font-bold text-emerald-700 font-mono text-lg">${Fmt.money(n.net_amount)}</p></div><div class="flex flex-col gap-1.5">${n.status==='aprovada'&&RBAC.can('canApprove')?`<button onclick="ModNotasFiscais.generatePix('${n.id}')" class="brand-btn bg-blue-600 text-white hover:bg-blue-700 text-xs">🏦 Gerar Pix</button>`:''} ${n.status==='pix_gerado'?`<button onclick="ModNotasFiscais.openPixModal('${n.id}')" class="brand-btn bg-indigo-600 text-white hover:bg-indigo-700 text-xs">📱 QR Code</button><button onclick="ModPix.settle('${n.id}')" class="brand-btn border border-slate-300 text-slate-600 hover:bg-slate-50 text-xs">🔄 Conciliar</button>`:''}</div></div>`;}).join('')}</div>`}
+      ${payable.length===0?UI.empty('Nenhuma nota aguardando','✅'):`<div class="divide-y divide-slate-100">${payable.map(n=>{const pr=projects.find(x=>x.id===n.project_id);const ov=n.due_date&&String(n.due_date).slice(0,10)<new Date().toLocaleDateString('sv-SE');return`<div class="px-5 py-4 flex items-center gap-4 hover:bg-slate-50"><div class="flex-1 min-w-0"><div class="flex items-center gap-2 mb-1 flex-wrap">${UI.badge(n.status)}${ov?'<span class="badge bg-red-100 text-red-700">⚠️ Vencida</span>':''}</div><p class="font-semibold text-slate-800 text-sm">${esc(n.emitter_name)}</p><p class="text-xs text-slate-400">${esc(pr?.name||'–')} · NF ${esc(n.fiscal_note_number||'–')} · Vence ${Fmt.date(n.due_date)}</p></div><div class="text-right mr-3"><p class="font-bold text-emerald-700 font-mono text-lg">${Fmt.money(n.net_amount)}</p></div><div class="flex flex-col gap-1.5">${n.status==='aprovada'&&RBAC.can('canApprove')?`<button onclick="ModNotasFiscais.generatePix('${n.id}')" class="brand-btn bg-blue-600 text-white hover:bg-blue-700 text-xs">🏦 Gerar Pix</button>`:''} ${n.status==='pix_gerado'?`<button onclick="ModNotasFiscais.openPixModal('${n.id}')" class="brand-btn bg-indigo-600 text-white hover:bg-indigo-700 text-xs">📱 QR Code</button><button onclick="ModPix.settle('${n.id}')" class="brand-btn border border-slate-300 text-slate-600 hover:bg-slate-50 text-xs">🔄 Conciliar</button>`:''}</div></div>`;}).join('')}</div>`}
     </div>
     <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
       <div class="px-5 py-4 border-b border-slate-100 bg-emerald-50 flex items-center gap-2"><span class="w-2 h-2 bg-emerald-500 rounded-full pulse-conciliado"></span><h2 class="font-bold text-slate-700 text-sm">Recentemente Conciliadas</h2></div>
@@ -819,11 +867,11 @@ const ModPendencias={
 const ModRelatorio={
   async render(){
     const{data:notes}=await DB.get('notes_fiscal');const{data:projects}=await DB.get('projects');
-    const fil=notes.filter(n=>!S.period||n.competency_period?.startsWith(S.period)).map(n=>DB.computeNote(n));
+    const fil=notes.filter(n=>(!S.period||n.competency_period?.startsWith(S.period))&&n.status!=='cancelada').map(n=>DB.computeNote(n));
     const byProj=projects.map(p=>{const pn=fil.filter(n=>n.project_id===p.id);return{...p,notes:pn,bruto:pn.reduce((a,n)=>a+n.gross_amount,0),retido:pn.reduce((a,n)=>a+n.tax_withheld,0),liq:pn.reduce((a,n)=>a+n.net_amount,0),pago:pn.filter(n=>n.status==='pago_conciliado').reduce((a,n)=>a+(n.paid_amount||0),0)};}).filter(p=>p.notes.length>0);
     UI.render(`<div class="p-6 fade-in"><div class="flex items-center justify-between mb-5 flex-wrap gap-3"><div><h1 class="text-xl font-bold text-slate-800">Balancete Mensal</h1><p class="text-sm text-slate-500">Período: ${Fmt.period(S.period)}</p></div><button onclick="window.print()" class="brand-btn border border-slate-300 text-slate-600 hover:bg-slate-50">🖨️ Imprimir</button></div>
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">${[['Total Bruto',fil.reduce((a,n)=>a+n.gross_amount,0),'text-slate-700'],['Total Retido',fil.reduce((a,n)=>a+n.tax_withheld,0),'text-red-600'],['Total Líquido',fil.reduce((a,n)=>a+n.net_amount,0),'text-emerald-700'],['Total Pago',fil.filter(n=>n.status==='pago_conciliado').reduce((a,n)=>a+(n.paid_amount||0),0),'text-blue-700']].map(([l,v,c])=>`<div class="bg-white rounded-xl border border-slate-200 p-4"><p class="text-xs text-slate-500 uppercase tracking-wide font-semibold">${l}</p><p class="text-xl font-black ${c} mt-1">${Fmt.money(v)}</p></div>`).join('')}</div>
-    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden"><div class="px-5 py-3 bg-slate-50 border-b border-slate-200"><h2 class="font-bold text-slate-700 text-sm">Detalhamento por Projeto</h2></div>
+    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden"><div class="px-5 py-3 bg-slate-50 border-b border-slate-200"><h2 class="font-bold text-slate-700 text-sm">Detalhamento por Loja</h2></div>
     ${byProj.length===0?UI.empty('Nenhum lançamento no período','📋'):`<div class="overflow-x-auto"><table class="brand-table"><thead><tr><th>Loja</th><th>Tipo</th><th class="text-center">NFs</th><th class="text-right">Bruto</th><th class="text-right">Retido</th><th class="text-right">Líquido</th><th class="text-right">Pago</th></tr></thead><tbody>
     ${byProj.map(p=>`<tr><td><p class="font-semibold text-slate-800 text-sm">${esc(p.name)}</p><p class="text-xs text-slate-400">${esc(p.code||'–')}</p></td><td><span class="text-xs px-2 py-0.5 rounded-full font-semibold ${p.type==='Livre'?'bg-blue-100 text-blue-700':'bg-purple-100 text-purple-700'}">${esc(p.type)}</span></td><td class="text-center">${p.notes.length}</td><td class="text-right font-mono text-sm">${Fmt.money(p.bruto)}</td><td class="text-right font-mono text-sm text-red-600">–${Fmt.money(p.retido)}</td><td class="text-right font-mono text-sm font-bold text-emerald-700">${Fmt.money(p.liq)}</td><td class="text-right font-mono text-sm text-blue-700">${Fmt.money(p.pago)}</td></tr>`).join('')}
     <tr class="bg-slate-50 font-bold border-t-2 border-slate-300"><td colspan="3" class="font-bold text-slate-700 py-3">TOTAL GERAL</td><td class="text-right font-mono text-sm">${Fmt.money(byProj.reduce((a,p)=>a+p.bruto,0))}</td><td class="text-right font-mono text-sm text-red-600">–${Fmt.money(byProj.reduce((a,p)=>a+p.retido,0))}</td><td class="text-right font-mono text-sm text-emerald-700">${Fmt.money(byProj.reduce((a,p)=>a+p.liq,0))}</td><td class="text-right font-mono text-sm text-blue-700">${Fmt.money(byProj.reduce((a,p)=>a+p.pago,0))}</td></tr>
@@ -934,6 +982,7 @@ const ModConfiguracoes={
     if(!url&&!key){this.clearConn();return;}
     if(!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(url||'')){UI.toast('URL inválida (https://xxxx.supabase.co)','warning');return;}
     if(!key||key.length<40){UI.toast('Informe a chave anon','warning');return;}
+    if(/^sb_secret_/.test(key)){UI.toast('Essa é uma chave secreta. Use a anon/publishable.','error');return;}
     if(/service_role/.test(atob((key.split('.')[1]||'').replace(/-/g,'+').replace(/_/g,'/')||'e30=')||'')){UI.toast('Essa é a chave service_role. Use a anon.','error');return;}
     try{localStorage.setItem('arf_url',url.replace(/\/$/,''));localStorage.setItem('arf_key',key);}catch{}
     UI.toast('Salvo. Recarregando…','success');setTimeout(()=>location.reload(),600);
@@ -1228,7 +1277,7 @@ const ModImobilizado={
   async exportCsv(){
     const{rows,ym}=await this._rows();
     if(!rows.length){UI.toast('Nada para exportar','warning');return;}
-    const n=v=>String(round2(v)).replace('.',',');const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+    const n=v=>String(round2(v)).replace('.',',');const q=v=>{let s=String(v??'');if(/^[=+\-@\t\r]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"';};
     const lines=[['Código','Descrição','Loja','Categoria','Aquisição','Custo','Residual','Vida útil (meses)','Depr. mensal','Depr. acumulada','Valor líquido','Situação','Baixa em'].join(';')];
     rows.forEach(a=>{const c=a._c;lines.push([q(a.code),q(a.description),q(a._store?.name),q(ASSET_CATEGORIES[a.category]?.label),a.acquisition_date||'',n(c.cost),n(c.residual),c.life,n(c.monthly),n(c.accumulated),n(c.book),a.status,a.disposal_date||''].join(';'));});
     const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
@@ -1241,7 +1290,7 @@ const App={
   MODULE_MAP:{
     'dashboard':{label:'Dashboard',mod:()=>ModDashboard.render()},
     'projetos':{label:'Lojas',mod:()=>ModProjetos.render()},
-    'contas-bancarias':{label:'Contas Bancárias',mod:()=>ModContasBancarias.render()},
+    'contas-bancarias':{label:'Contas Bancárias',perm:'canManageBanks',mod:()=>ModContasBancarias.render()},
     'imobilizado':{label:'Imobilizado',perm:'canViewReports',mod:()=>ModImobilizado.render()},
     'notas-fiscais':{label:'Notas Fiscais',mod:()=>ModNotasFiscais.render()},
     'pix':{label:'Pix & Pagamentos',mod:()=>ModPix.render()},
@@ -1277,7 +1326,7 @@ const App={
     const el=document.getElementById('favorites-list');if(!el)return;
     try{
       const{data:projects}=await DB.get('projects');
-      const favs=projects.filter(p=>p.is_favorite&&p.status==='ativo');
+      const favs=projects.filter(p=>Favs.has(p.id)&&p.status==='ativo');
       el.innerHTML=favs.length===0
         ?'<p class="text-xs text-brand-200/50 px-3 py-1.5 italic">Nenhum favorito</p>'
         :favs.map(p=>`<a href="#" onclick="ModProjetos.openDetail('${esc(p.id)}');return false;" class="nav-item flex items-center gap-2 px-3 py-1.5 text-xs text-brand-100 rounded-lg truncate"><span class="text-amber-400">★</span><span class="truncate">${esc(p.name)}</span></a>`).join('');
@@ -1286,7 +1335,7 @@ const App={
 
   async updateBadges(){
     try{
-      const{data:notes}=await DB.get('notes_fiscal');const{data:pend}=await DB.get('internal_pendencies');
+      const[{data:notes},{data:pend}]=await Promise.all([DB.get('notes_fiscal'),DB.get('internal_pendencies')]);
       const nfCt=notes.filter(n=>n.status==='pendente'||n.status==='aprovada').length;
       const pCt=pend.filter(p=>p.status==='aberta'||p.status==='em_analise').length;
       const set=(id,ct)=>{const el=document.getElementById(id);if(!el)return;el.textContent=ct;el.classList.toggle('hidden',ct===0);};
@@ -1330,7 +1379,7 @@ const App={
       body:`<div class="text-center space-y-3">
         <div class="w-14 h-14 bg-brand-800 rounded-xl flex items-center justify-center text-white text-xl font-black mx-auto">ARF</div>
         <p class="font-bold text-slate-800">ARF – Gestão Contábil e Operacional</p>
-        <p class="text-sm text-slate-500">v1.2.1 · ITG 2002 Compatível</p>
+        <p class="text-sm text-slate-500">v1.2.4 · ITG 2002 Compatível</p>
         <div class="bg-slate-50 rounded-xl p-4 text-left text-xs text-slate-600 space-y-1.5">
           <p>⚖️ Motor Fiscal (MEI, Simples, LP, LR, PF)</p><p>🏦 Pix EMV com TxId e QR Code</p><p>💬 Comunicação Interna Estruturada</p><p>🔐 RBAC — 5 papéis + RLS no Supabase</p><p>📱 PWA Instalável — offline-capable</p>
         </div>
@@ -1390,7 +1439,7 @@ const App={
   },
 
   async init(){
-    console.log('[ARF] Inicializando v1.2.1…');
+    console.log('[ARF] Inicializando v1.2.4…');
     this.initPWA();
     this.initPeriod();
     const session=await Auth.checkSession();

@@ -14,8 +14,8 @@
   <title>ARF - Gestão Contábil</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config={theme:{extend:{colors:{brand:{950:'#071525',900:'#0B2035',800:'#0F2D4E',700:'#153D6B',600:'#1A4B7A',500:'#2060A0',400:'#3B82C4',200:'#93C5E8',100:'#DBEEFF',50:'#F0F7FF'}}}}}</script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="vendor/qrcode.min.js"></script>
+  <script src="vendor/supabase.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     *{font-family:'Inter',system-ui,sans-serif}
@@ -39,6 +39,7 @@
       #sidebar-overlay{display:none}
       #sidebar-overlay.open{display:block}
     }
+    #app-layout,#sidebar{height:100vh;height:100dvh}
     .modal-backdrop{backdrop-filter:blur(3px)}
     .brand-input{display:block;width:100%;border:1px solid #CBD5E1;border-radius:.5rem;padding:.5rem .75rem;font-size:.875rem;color:#1E293B;background:#fff;outline:none;transition:box-shadow .15s,border-color .15s;font-family:inherit;box-sizing:border-box}
     .brand-input:focus{border-color:#3B82F6;box-shadow:0 0 0 3px rgba(59,130,246,.15)}
@@ -84,18 +85,18 @@
     </div>
     <form id="login-form" onsubmit="Auth.handleLogin(event)">
       <div style="margin-bottom:1.1rem">
-        <label style="display:block;font-size:.68rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">E-mail</label>
+        <label for="login-email" style="display:block;font-size:.68rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">E-mail</label>
         <input id="login-email" type="email" autocomplete="email" required placeholder="seu@email.com" class="brand-input" style="font-size:.9rem;padding:.65rem .875rem"/>
       </div>
       <div style="margin-bottom:1.1rem">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem">
-          <label style="font-size:.68rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.06em">Senha</label>
+          <label for="login-password" style="font-size:.68rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.06em">Senha</label>
           <button type="button" onclick="Auth.showForgotPassword()" style="background:none;border:none;font-size:.75rem;color:#3B82F6;cursor:pointer;font-family:inherit;padding:0">Esqueci a senha</button>
         </div>
         <input id="login-password" type="password" autocomplete="current-password" required placeholder="••••••••" class="brand-input" style="font-size:.9rem;padding:.65rem .875rem"/>
         <button type="button" onclick="Auth.togglePasswordVisibility()" style="background:none;border:none;font-size:.72rem;color:#64748B;cursor:pointer;margin-top:.35rem;font-family:inherit;padding:0">👁 Mostrar/ocultar senha</button>
       </div>
-      <div id="login-error" style="display:none;background:#FEF2F2;border:1px solid #FECACA;border-radius:.5rem;padding:.6rem .75rem;font-size:.78rem;color:#B91C1C;margin-bottom:.9rem;line-height:1.4"></div>
+      <div id="login-error" role="alert" style="display:none;background:#FEF2F2;border:1px solid #FECACA;border-radius:.5rem;padding:.6rem .75rem;font-size:.78rem;color:#B91C1C;margin-bottom:.9rem;line-height:1.4"></div>
       <button type="submit" id="login-btn"
               style="width:100%;background:#0F2D4E;color:#fff;border:none;border-radius:.625rem;padding:.8rem;font-size:.95rem;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s;letter-spacing:.01em"
               onmouseover="this.style.background='#153D6B'" onmouseout="this.style.background='#0F2D4E'">
@@ -109,7 +110,7 @@
         Entrar no modo demonstração
       </button>
     </div>
-    <p style="text-align:center;font-size:.68rem;color:#CBD5E1;margin-top:.75rem">ARF - v1.2.0</p>
+    <p style="text-align:center;font-size:.68rem;color:#CBD5E1;margin-top:.75rem">ARF - v1.2.4</p>
   </div>
 </div>
 
